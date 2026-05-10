@@ -1,8 +1,6 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
-import RoleSelect from "./pages/RoleSelect";
 import Signup from "./pages/Signup";
-import EmailVerification from "./pages/EmailVerification";
 import Login from "./pages/Login";
 import CustomerProfileSetup from "./pages/CustomerProfileSetup";
 import DriverProfileSetup from "./pages/DriverProfileSetup";
@@ -12,9 +10,8 @@ import Dashboard from "./pages/Dashboard";
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<RoleSelect />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/verify" element={<EmailVerification />} />
+      <Route path="/" element={<Signup />} />
+      <Route path="/signup" element={<Navigate to="/" replace />} />
       <Route path="/login" element={<Login />} />
 
       <Route
@@ -50,7 +47,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
     </Routes>
   );
 }

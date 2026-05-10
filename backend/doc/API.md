@@ -27,7 +27,7 @@
 Authorization: Bearer <JWT>
 ```
 
-JWT is issued by `POST /api/auth/login`. Payload claims (signed with `process.env.JWT_SECRET`, expires in **7 days**):
+JWT is issued by `POST /api/auth/login` and `POST /api/auth/signup` (same token shape). Payload claims (signed with `process.env.JWT_SECRET`, expires in **7 days**):
 
 - `id`: MongoDB User `_id` (string ObjectId from Mongoose serialization)
 - `role`: `"customer"` | `"driver"` | `"restaurant"`
@@ -65,7 +65,7 @@ Mounted in `backend/src/server.js` as `/api/auth` + router paths below.
 
 **Full path:** `http://localhost:5000/api/auth/signup`
 
-**Description:** Create a pending user (hashes password), create a verification token (24h), and trigger verification delivery (SMTP if configured; otherwise verification URL is logged on the server — see Notes).
+**Description:** Create an active user (hashes password), set `isVerified: true` and `accountStatus: "active"`, and return a JWT plus user snapshot (same shape as login). No email verification step.
 
 **Request body**
 
@@ -91,7 +91,19 @@ Mounted in `backend/src/server.js` as `/api/auth` + router paths below.
 
 ```json
 {
-  "message": "Verification email sent"
+  "message": "Account created",
+  "user": {
+    "_id": "…",
+    "email": "user@example.com",
+    "role": "customer",
+    "isVerified": true,
+    "accountStatus": "active",
+    "lastLogin": null,
+    "createdAt": "…",
+    "updatedAt": "…",
+    "__v": 0
+  },
+  "token": "<JWT string>"
 }
 ```
 
@@ -101,57 +113,8 @@ Mounted in `backend/src/server.js` as `/api/auth` + router paths below.
 |-----------------------------------------------|----------------|-------------------|
 | Missing fields                               | **400**        | `"email, password, and role are required"` |
 | Invalid `role`                               | **400**        | `"Invalid role"` |
-| Email exists and user is verified            | **409**        | `"Email already registered"` |
+| Email already registered                      | **409**        | `"Email already registered"` |
 | Unexpected / DB / hashing                    | **500**        | Varies |
-
-**Repeat signup (unverified email)**
-
-If the email already exists and `isVerified` is `false`, the server rotates verification tokens for that user and returns **201** with the same success body (`"Verification email sent"`).
-
-**Notes**
-
-- User is created with `accountStatus: "pending"` and `isVerified: false` until email verification succeeds.
-- Verification URL format (included in outgoing email text when SMTP is configured):  
-  `{APP_BASE_URL}/api/auth/verify/{token}`  
-  Defaults: `APP_BASE_URL` = `http://localhost:5000` if unset.
-- SMTP env vars (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`); if incomplete, signup still succeeds but email is skipped and you should read the verification link from the server console logs.
-
----
-
-### GET `/api/auth/verify/:token`
-
-**Full path:** `http://localhost:5000/api/auth/verify/:token`
-
-**Example:**  
-`http://localhost:5000/api/auth/verify/abc123…`
-
-**Description:** Validates the verification token, marks the user verified, sets `accountStatus` to `active`, and deletes verification tokens for that user.
-
-**Path params**
-
-| Param   | Type   | Notes                    |
-|---------|--------|--------------------------|
-| `token` | string | Stored verification token|
-
-**Success response**
-
-- Status: **200 OK**
-
-```json
-{
-  "message": "Email verified successfully"
-}
-```
-
-**Error responses (non-exhaustive)**
-
-| Condition                    | Typical status | Example `message` |
-|------------------------------|----------------|-------------------|
-| Token missing               | **400**        | `"Verification token is required"` |
-| Unknown token               | **400**        | `"Invalid verification token"` |
-| Expired token               | **400**        | `"Verification token expired"` |
-| User missing                | **404**        | `"User not found"` |
-| Unexpected                  | **500**        | Varies |
 
 ---
 
@@ -204,7 +167,6 @@ If the email already exists and `isVerified` is `false`, the server rotates veri
 |------------------------------------------------|----------------|-------------------|
 | Missing email/password                         | **400**        | `"email and password are required"` |
 | Wrong email/password                          | **401**        | `"Invalid credentials"` |
-| Email not verified                             | **403**        | `"Email not verified"` |
 | Account not active (`pending` / `suspended`)   | **403**        | `"Account is pending"` / `"Account is suspended"` etc. |
 | Unexpected                                     | **500**        | Varies |
 
@@ -433,8 +395,7 @@ Mongoose address field validation failures may surface as **500** depending on m
 | Method | Exact path                               | Auth | Purpose |
 |--------|------------------------------------------|------|---------|
 | `GET`  | `http://localhost:5000/`                 | none | Health (plain text) |
-| `POST` | `http://localhost:5000/api/auth/signup` | none | Sign up + send verification |
-| `GET`  | `http://localhost:5000/api/auth/verify/:token` | none | Verify email |
+| `POST` | `http://localhost:5000/api/auth/signup` | none | Sign up + JWT |
 | `POST` | `http://localhost:5000/api/auth/login` | none | Login + JWT |
 | `POST` | `http://localhost:5000/api/profile/complete` | Bearer JWT | Upsert profile by role |
 
@@ -442,15 +403,10 @@ Mongoose address field validation failures may surface as **500** depending on m
 
 ## Environment notes (referenced by APIs)
 
-Required for persistence / auth email flow:
+Required for persistence / JWT:
 
 - **`MONGO_URI`** — MongoDB connection string (`backend/src/config/db.js`).
-- **`JWT_SECRET`** — required for issuing/verifying JWTs (`generateToken.js`, `authMiddleware.js`). If unset, `/login` signing or middleware verification can fail server-side.
-
-Optional email / URLs:
-
-- **`APP_BASE_URL`** — verification link prefix in outbound email (`backend/src/services/emailService.js`).
-- **`SMTP_*`** — when all of `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` are set, verification email is sent; otherwise the verification URL is only logged (`emailService.js`).
+- **`JWT_SECRET`** — required for issuing/verifying JWTs (`generateToken.js`, `authMiddleware.js`). If unset, signup/login signing or middleware verification can fail server-side.
 
 Optional Windows DNS override for Node SRV lookups:
 

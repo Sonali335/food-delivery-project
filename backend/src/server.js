@@ -5,6 +5,11 @@ const cors = require("cors");
 
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
 
+if (!process.env.JWT_SECRET || String(process.env.JWT_SECRET).trim() === "") {
+  console.error("❌ JWT_SECRET is missing. Add it to backend/.env (see backend/.env.example).");
+  process.exit(1);
+}
+
 dns.setDefaultResultOrder("ipv4first");
 // Node can fail mongodb+srv SRV lookups on some Windows resolver setups; public DNS fixes it.
 if (process.platform === "win32" && process.env.MONGO_USE_SYSTEM_DNS !== "1") {

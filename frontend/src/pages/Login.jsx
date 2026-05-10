@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { login } from "../api/auth";
 import Input from "../components/Input";
 import Button from "../components/Button";
@@ -39,6 +39,9 @@ function Login() {
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>Log in</h1>
+      <p className={styles.hint}>
+        New user? <Link to="/">Create account</Link>
+      </p>
       <form onSubmit={finishLogin}>
         <button type="submit" className={styles.srSubmit} aria-hidden tabIndex={-1}>
           Submit

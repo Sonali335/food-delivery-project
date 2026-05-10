@@ -9,15 +9,6 @@ const signup = async (req, res) => {
   }
 };
 
-const verifyEmail = async (req, res) => {
-  try {
-    const result = await authService.verifyEmail(req.params.token);
-    return res.status(200).json(result);
-  } catch (error) {
-    return res.status(error.statusCode || 500).json({ message: error.message });
-  }
-};
-
 const login = async (req, res) => {
   try {
     const result = await authService.login(req.body);
@@ -29,6 +20,5 @@ const login = async (req, res) => {
 
 module.exports = {
   signup,
-  verifyEmail,
   login,
 };
