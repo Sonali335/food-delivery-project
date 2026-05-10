@@ -1,7 +1,9 @@
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
+const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/User");
 const OtpVerification = require("../models/OtpVerification");
+const CustomerProfile = require("../models/CustomerProfile");
 const generateToken = require("../utils/generateToken");
 const { sendOtpEmail } = require("./emailService");
 
@@ -100,6 +102,10 @@ const login = async ({ email, password }) => {
     throw createError("Invalid credentials", 401);
   }
 
+  if (!user.password) {
+    throw createError("This account uses Google sign-in.", 401);
+  }
+
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) {
     throw createError("Invalid credentials", 401);
@@ -123,8 +129,83 @@ const login = async ({ email, password }) => {
   return { user: userData, token };
 };
 
+const googleLogin = async ({ idToken }) => {
+  if (!idToken) {
+    throw createError("idToken is required", 400);
+  }
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!clientId || String(clientId).trim() === "") {
+    throw createError("Google sign-in is not configured", 503);
+  }
+
+  const client = new OAuth2Client(clientId);
+  let payload;
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: clientId,
+    });
+    payload = ticket.getPayload();
+  } catch {
+    throw createError("Invalid Google token", 401);
+  }
+
+  const emailRaw = payload.email;
+  if (!emailRaw || typeof emailRaw !== "string") {
+    throw createError("Google account has no verified email", 400);
+  }
+
+  if (payload.email_verified === false) {
+    throw createError("Google email is not verified", 400);
+  }
+
+  const normalizedEmail = emailRaw.toLowerCase().trim();
+  const displayName = payload.name || payload.given_name || "";
+
+  let user = await User.findOne({ email: normalizedEmail });
+
+  if (!user) {
+    user = await User.create({
+      email: normalizedEmail,
+      role: "customer",
+      isVerified: true,
+      accountStatus: "active",
+      lastLogin: new Date(),
+    });
+
+    await CustomerProfile.findOneAndUpdate(
+      { userId: user._id },
+      {
+        userId: user._id,
+        username: displayName || normalizedEmail.split("@")[0],
+        phone: "pending",
+        addresses: [],
+      },
+      { upsert: true, new: true, runValidators: true }
+    );
+  } else {
+    if (user.accountStatus === "suspended") {
+      throw createError("Account is suspended", 403);
+    }
+
+    if (!user.isVerified || user.accountStatus !== "active") {
+      user.isVerified = true;
+      user.accountStatus = "active";
+    }
+
+    user.lastLogin = new Date();
+    await user.save();
+  }
+
+  const token = generateToken(user);
+
+  return { token, role: user.role };
+};
+
 module.exports = {
   signup,
   verifyOtp,
   login,
+  googleLogin,
 };

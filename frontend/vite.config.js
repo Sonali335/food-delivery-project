@@ -1,7 +1,28 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig, loadEnv } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import { fileURLToPath } from "url";
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-})
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Merge env so Google Sign-In works if you only set GOOGLE_CLIENT_ID in backend/.env
+export default defineConfig(({ mode }) => {
+  const repoRoot = path.join(__dirname, "..");
+  const backendRoot = path.join(repoRoot, "backend");
+
+  const merged = {
+    ...loadEnv(mode, backendRoot, ""),
+    ...loadEnv(mode, repoRoot, ""),
+    ...loadEnv(mode, __dirname, ""),
+  };
+
+  const googleClientId =
+    merged.VITE_GOOGLE_CLIENT_ID || merged.GOOGLE_CLIENT_ID || "";
+
+  return {
+    plugins: [react()],
+    define: {
+      "import.meta.env.VITE_GOOGLE_CLIENT_ID": JSON.stringify(googleClientId),
+    },
+  };
+});

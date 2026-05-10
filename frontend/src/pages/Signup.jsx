@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { signup } from "../api/auth";
+import { googleLogin, signup } from "../api/auth";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import { loadGsiScript } from "../utils/loadGsiScript";
 import styles from "./pages.module.css";
 
 const ROLES = [
@@ -19,6 +20,8 @@ function Signup() {
   const [role, setRole] = useState("customer");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const googleBtnRef = useRef(null);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -34,12 +37,86 @@ function Signup() {
     }
   };
 
+  const handleGoogleCredential = useCallback(
+    async (response) => {
+      if (!response?.credential) return;
+      setError("");
+      setGoogleLoading(true);
+      try {
+        const result = await googleLogin({ idToken: response.credential });
+        localStorage.setItem("token", result.token);
+        localStorage.setItem("role", result.role);
+        navigate("/dashboard");
+      } catch (err) {
+        setError(err.message || "Google sign-up failed");
+      } finally {
+        setGoogleLoading(false);
+      }
+    },
+    [navigate]
+  );
+
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+
+  useEffect(() => {
+    if (!googleClientId) return undefined;
+
+    let cancelled = false;
+
+    loadGsiScript()
+      .then(() => {
+        if (cancelled || !window.google?.accounts?.id) return;
+        const host = googleBtnRef.current;
+        if (!host) return;
+        host.innerHTML = "";
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: handleGoogleCredential,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+        window.google.accounts.id.renderButton(host, {
+          theme: "outline",
+          size: "large",
+          text: "signup_with",
+          width: 384,
+          locale: "en",
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setError("Could not load Google Sign-In. Try again later.");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [googleClientId, handleGoogleCredential]);
+
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>Create account</h1>
       <p className={styles.hint}>
         Already have an account? <Link to="/login">Log in</Link>
       </p>
+
+      {googleClientId ? (
+        <div className={styles.googleBlock}>
+          <div
+            className={styles.googleButtonHost}
+            ref={googleBtnRef}
+            aria-busy={googleLoading}
+          />
+          <p className={styles.orDivider}>or sign up with email</p>
+        </div>
+      ) : import.meta.env.DEV ? (
+        <p className={styles.envHint}>
+          Google sign-up is off until{" "}
+          <code className={styles.envCode}>GOOGLE_CLIENT_ID</code> or{" "}
+          <code className={styles.envCode}>VITE_GOOGLE_CLIENT_ID</code> is set (e.g. in{" "}
+          <code className={styles.envCode}>backend/.env</code>), then restart Vite.
+        </p>
+      ) : null}
+
       <form onSubmit={handleSubmit}>
         <button type="submit" className={styles.srSubmit} aria-hidden tabIndex={-1}>
           Submit

@@ -92,3 +92,32 @@
   font-size: 0.9375rem;
   cursor: pointer;
 }
+
+.googleBlock {
+  margin-top: 1.25rem;
+}
+
+.orDivider {
+  text-align: center;
+  color: #78716c;
+  font-size: 0.8125rem;
+  margin: 0 0 0.75rem;
+}
+
+.googleButtonHost {
+  min-height: 2.5rem;
+}
+
+.envHint {
+  color: #78716c;
+  font-size: 0.8125rem;
+  margin: 0 0 1rem;
+  line-height: 1.45;
+}
+
+.envCode {
+  font-size: 0.75rem;
+  background: #f5f5f4;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}

@@ -43,4 +43,19 @@ const login = async ({ email, password }) => {
   return data;
 };
 
-export { signup, verifyOtp, login };
+const googleLogin = async ({ idToken }) => {
+  const response = await fetch("http://localhost:5000/api/auth/google", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ idToken }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || "Google login failed");
+  }
+  return data;
+};
+
+export { signup, verifyOtp, login, googleLogin };

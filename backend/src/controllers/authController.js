@@ -27,8 +27,18 @@ const login = async (req, res) => {
   }
 };
 
+const googleLogin = async (req, res) => {
+  try {
+    const result = await authService.googleLogin(req.body);
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   signup,
   verifyOtp,
   login,
+  googleLogin,
 };
