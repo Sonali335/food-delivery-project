@@ -9,6 +9,15 @@ const signup = async (req, res) => {
   }
 };
 
+const verifyOtp = async (req, res) => {
+  try {
+    const result = await authService.verifyOtp(req.body);
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
 const login = async (req, res) => {
   try {
     const result = await authService.login(req.body);
@@ -20,5 +29,6 @@ const login = async (req, res) => {
 
 module.exports = {
   signup,
+  verifyOtp,
   login,
 };
