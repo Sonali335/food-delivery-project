@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Signup from "./pages/Signup";
+import OtpVerification from "./pages/OtpVerification";
 import Login from "./pages/Login";
 import CustomerProfileSetup from "./pages/CustomerProfileSetup";
 import DriverProfileSetup from "./pages/DriverProfileSetup";
@@ -12,6 +13,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Signup />} />
       <Route path="/signup" element={<Navigate to="/" replace />} />
+      <Route path="/verify-otp" element={<OtpVerification />} />
       <Route path="/login" element={<Login />} />
 
       <Route

@@ -25,13 +25,8 @@ function Signup() {
     setError("");
     setLoading(true);
     try {
-      const result = await signup({ email, password, role });
-      localStorage.setItem("token", result.token);
-      localStorage.setItem("role", result.user.role);
-
-      if (result.user.role === "customer") navigate("/setup/customer");
-      else if (result.user.role === "driver") navigate("/setup/driver");
-      else navigate("/setup/restaurant");
+      await signup({ email, password, role });
+      navigate("/verify-otp", { state: { email } });
     } catch (err) {
       setError(err.message || "Signup failed");
     } finally {
@@ -80,7 +75,7 @@ function Signup() {
 
         {error ? <div className={styles.error}>{error}</div> : null}
         <Button
-          text={loading ? "Submitting..." : "Continue to profile setup"}
+          text={loading ? "Submitting..." : "Create account"}
           onClick={(e) => {
             handleSubmit(e);
           }}
