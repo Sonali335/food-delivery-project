@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { googleLogin, signup } from "../api/auth";
 import Input from "../components/Input";
 import Button from "../components/Button";
-import { loadGsiScript } from "../utils/loadGsiScript";
+import {
+  mountGoogleSignInButton,
+  setGoogleCredentialHandler,
+  unmountGoogleSignInButton,
+} from "../utils/googleGsiMount";
 import styles from "./pages.module.css";
 
 const ROLES = [
@@ -56,32 +60,28 @@ function Signup() {
     [navigate]
   );
 
+  const googleCredentialRef = useRef(handleGoogleCredential);
+  googleCredentialRef.current = handleGoogleCredential;
+
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!googleClientId) return undefined;
 
-    let cancelled = false;
+    setGoogleCredentialHandler((response) => googleCredentialRef.current(response));
 
-    loadGsiScript()
+    let cancelled = false;
+    const host = googleBtnRef.current;
+
+    mountGoogleSignInButton(host, googleClientId, {
+      theme: "outline",
+      size: "large",
+      text: "signup_with",
+      width: 384,
+      locale: "en",
+    })
       .then(() => {
-        if (cancelled || !window.google?.accounts?.id) return;
-        const host = googleBtnRef.current;
-        if (!host) return;
-        host.innerHTML = "";
-        window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: handleGoogleCredential,
-          auto_select: false,
-          cancel_on_tap_outside: true,
-        });
-        window.google.accounts.id.renderButton(host, {
-          theme: "outline",
-          size: "large",
-          text: "signup_with",
-          width: 384,
-          locale: "en",
-        });
+        if (cancelled) unmountGoogleSignInButton(host);
       })
       .catch(() => {
         if (!cancelled) setError("Could not load Google Sign-In. Try again later.");
@@ -89,8 +89,9 @@ function Signup() {
 
     return () => {
       cancelled = true;
+      unmountGoogleSignInButton(host);
     };
-  }, [googleClientId, handleGoogleCredential]);
+  }, [googleClientId]);
 
   return (
     <div className={styles.page}>
@@ -114,6 +115,13 @@ function Signup() {
           <code className={styles.envCode}>GOOGLE_CLIENT_ID</code> or{" "}
           <code className={styles.envCode}>VITE_GOOGLE_CLIENT_ID</code> is set (e.g. in{" "}
           <code className={styles.envCode}>backend/.env</code>), then restart Vite.
+        </p>
+      ) : null}
+      {import.meta.env.DEV && googleClientId && window.location.hostname === "127.0.0.1" ? (
+        <p className={styles.envHint}>
+          Using <code className={styles.envCode}>127.0.0.1</code>? Add{" "}
+          <code className={styles.envCode}>http://127.0.0.1:5173</code> under{" "}
+          <strong>Authorized JavaScript origins</strong> in Google Cloud Console.
         </p>
       ) : null}
 

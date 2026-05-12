@@ -1,5 +1,7 @@
+import { getApiBase } from "./config";
+
 const signup = async ({ email, password, role }) => {
-  const response = await fetch("http://localhost:5000/api/auth/signup", {
+  const response = await fetch(`${getApiBase()}/auth/signup`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -14,7 +16,7 @@ const signup = async ({ email, password, role }) => {
 };
 
 const verifyOtp = async ({ email, otp }) => {
-  const response = await fetch("http://localhost:5000/api/auth/verify-otp", {
+  const response = await fetch(`${getApiBase()}/auth/verify-otp`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -29,7 +31,7 @@ const verifyOtp = async ({ email, otp }) => {
 };
 
 const login = async ({ email, password }) => {
-  const response = await fetch("http://localhost:5000/api/auth/login", {
+  const response = await fetch(`${getApiBase()}/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -44,7 +46,7 @@ const login = async ({ email, password }) => {
 };
 
 const googleLogin = async ({ idToken }) => {
-  const response = await fetch("http://localhost:5000/api/auth/google", {
+  const response = await fetch(`${getApiBase()}/auth/google`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

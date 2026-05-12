@@ -1,10 +1,12 @@
+import { getApiBase } from "./config";
+
 const authHeader = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 const getProfile = async () => {
-  const response = await fetch("http://localhost:5000/api/profile", {
+  const response = await fetch(`${getApiBase()}/profile`, {
     method: "GET",
     headers: {
       ...authHeader(),
@@ -21,7 +23,7 @@ const getProfile = async () => {
 };
 
 const completeCustomerProfile = async (data) => {
-  const response = await fetch("http://localhost:5000/api/profile/complete", {
+  const response = await fetch(`${getApiBase()}/profile/complete`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -37,7 +39,7 @@ const completeCustomerProfile = async (data) => {
 };
 
 const completeDriverProfile = async (data) => {
-  const response = await fetch("http://localhost:5000/api/profile/complete", {
+  const response = await fetch(`${getApiBase()}/profile/complete`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -53,7 +55,7 @@ const completeDriverProfile = async (data) => {
 };
 
 const completeRestaurantProfile = async (data) => {
-  const response = await fetch("http://localhost:5000/api/profile/complete", {
+  const response = await fetch(`${getApiBase()}/profile/complete`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -69,7 +71,7 @@ const completeRestaurantProfile = async (data) => {
 };
 
 const deleteProfile = async () => {
-  const response = await fetch("http://localhost:5000/api/profile", {
+  const response = await fetch(`${getApiBase()}/profile`, {
     method: "DELETE",
     headers: {
       ...authHeader(),
@@ -83,7 +85,7 @@ const deleteProfile = async () => {
 };
 
 const updatePassword = async ({ currentPassword, newPassword, confirmPassword }) => {
-  const response = await fetch("http://localhost:5000/api/profile/password", {
+  const response = await fetch(`${getApiBase()}/profile/password`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

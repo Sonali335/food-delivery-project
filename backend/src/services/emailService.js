@@ -2,7 +2,7 @@ const transporter = require("../config/email");
 
 const sendVerificationEmail = async (email, token) => {
   const appBaseUrl = process.env.APP_BASE_URL || "http://localhost:5000";
-  const verificationLink = `${appBaseUrl}/api/auth/verify/${token}`;
+  const verificationLink = `${appBaseUrl}/auth/verify/${token}`;
 
   const hasSmtpConfig =
     process.env.SMTP_HOST &&

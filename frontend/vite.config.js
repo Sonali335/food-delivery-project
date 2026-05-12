@@ -19,10 +19,25 @@ export default defineConfig(({ mode }) => {
   const googleClientId =
     merged.VITE_GOOGLE_CLIENT_ID || merged.GOOGLE_CLIENT_ID || "";
 
+  const apiProxyTarget =
+    merged.VITE_API_PROXY_TARGET?.replace(/\/$/, "") || "http://localhost:5000";
+
   return {
     plugins: [react()],
     define: {
       "import.meta.env.VITE_GOOGLE_CLIENT_ID": JSON.stringify(googleClientId),
+    },
+    server: {
+      proxy: {
+        "/auth": { target: apiProxyTarget, changeOrigin: true },
+        "/profile": { target: apiProxyTarget, changeOrigin: true },
+      },
+    },
+    preview: {
+      proxy: {
+        "/auth": { target: apiProxyTarget, changeOrigin: true },
+        "/profile": { target: apiProxyTarget, changeOrigin: true },
+      },
     },
   };
 });

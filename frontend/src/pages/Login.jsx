@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { googleLogin, login } from "../api/auth";
 import Input from "../components/Input";
 import Button from "../components/Button";
-import { loadGsiScript } from "../utils/loadGsiScript";
+import {
+  mountGoogleSignInButton,
+  setGoogleCredentialHandler,
+  unmountGoogleSignInButton,
+} from "../utils/googleGsiMount";
 import styles from "./pages.module.css";
 
 const REDIRECT_AFTER_LOGIN_KEY = "redirectAfterLogin";
@@ -16,28 +20,6 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const googleBtnRef = useRef(null);
-
-  const finishLogin = async (event) => {
-    if (event && event.preventDefault) event.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      const result = await login({ email, password });
-      localStorage.setItem("token", result.token);
-      localStorage.setItem("role", result.user.role);
-      const next = sessionStorage.getItem(REDIRECT_AFTER_LOGIN_KEY);
-      if (next) {
-        sessionStorage.removeItem(REDIRECT_AFTER_LOGIN_KEY);
-        navigate(next);
-      } else {
-        navigate("/dashboard");
-      }
-    } catch (err) {
-      setError(err.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const applyAuthRedirect = useCallback(() => {
     const next = sessionStorage.getItem(REDIRECT_AFTER_LOGIN_KEY);
@@ -68,32 +50,28 @@ function Login() {
     [applyAuthRedirect]
   );
 
+  const googleCredentialRef = useRef(handleGoogleCredential);
+  googleCredentialRef.current = handleGoogleCredential;
+
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!googleClientId) return undefined;
 
-    let cancelled = false;
+    setGoogleCredentialHandler((response) => googleCredentialRef.current(response));
 
-    loadGsiScript()
+    let cancelled = false;
+    const host = googleBtnRef.current;
+
+    mountGoogleSignInButton(host, googleClientId, {
+      theme: "outline",
+      size: "large",
+      text: "continue_with",
+      width: 384,
+      locale: "en",
+    })
       .then(() => {
-        if (cancelled || !window.google?.accounts?.id) return;
-        const host = googleBtnRef.current;
-        if (!host) return;
-        host.innerHTML = "";
-        window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: handleGoogleCredential,
-          auto_select: false,
-          cancel_on_tap_outside: true,
-        });
-        window.google.accounts.id.renderButton(host, {
-          theme: "outline",
-          size: "large",
-          text: "continue_with",
-          width: 384,
-          locale: "en",
-        });
+        if (cancelled) unmountGoogleSignInButton(host);
       })
       .catch(() => {
         if (!cancelled) setError("Could not load Google Sign-In. Try again later.");
@@ -101,8 +79,31 @@ function Login() {
 
     return () => {
       cancelled = true;
+      unmountGoogleSignInButton(host);
     };
-  }, [googleClientId, handleGoogleCredential]);
+  }, [googleClientId]);
+
+  const finishLogin = async (event) => {
+    if (event && event.preventDefault) event.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const result = await login({ email, password });
+      localStorage.setItem("token", result.token);
+      localStorage.setItem("role", result.user.role);
+      const next = sessionStorage.getItem(REDIRECT_AFTER_LOGIN_KEY);
+      if (next) {
+        sessionStorage.removeItem(REDIRECT_AFTER_LOGIN_KEY);
+        navigate(next);
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      setError(err.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -116,6 +117,14 @@ function Login() {
           <code className={styles.envCode}>GOOGLE_CLIENT_ID</code> or{" "}
           <code className={styles.envCode}>VITE_GOOGLE_CLIENT_ID</code> is set (e.g. in{" "}
           <code className={styles.envCode}>backend/.env</code>), then restart Vite.
+        </p>
+      ) : null}
+      {import.meta.env.DEV && googleClientId && window.location.hostname === "127.0.0.1" ? (
+        <p className={styles.envHint}>
+          Using <code className={styles.envCode}>127.0.0.1</code>? Add{" "}
+          <code className={styles.envCode}>http://127.0.0.1:5173</code> under{" "}
+          <strong>Authorized JavaScript origins</strong> in Google Cloud Console (same Web client
+          ID).
         </p>
       ) : null}
       <form onSubmit={finishLogin}>
