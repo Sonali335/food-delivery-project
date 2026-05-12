@@ -1,5 +1,17 @@
 const profileService = require("../services/profileService");
 
+const getProfile = async (req, res) => {
+  try {
+    const profile = await profileService.getProfileForUser(req.user._id, req.user.role);
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+    return res.status(200).json({ profile });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
 const completeProfile = async (req, res) => {
   try {
     let profile;
@@ -20,6 +32,17 @@ const completeProfile = async (req, res) => {
   }
 };
 
+const deleteProfile = async (req, res) => {
+  try {
+    await profileService.deleteProfileAndAccount(req.user._id, req.user.role);
+    return res.status(200).json({ message: "Profile and account deleted." });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
 module.exports = {
+  getProfile,
   completeProfile,
+  deleteProfile,
 };

@@ -1,6 +1,8 @@
 const CustomerProfile = require("../models/CustomerProfile");
 const DriverProfile = require("../models/DriverProfile");
 const RestaurantProfile = require("../models/RestaurantProfile");
+const OtpVerification = require("../models/OtpVerification");
+const User = require("../models/User");
 
 const createError = (message, statusCode) => {
   const error = new Error(message);
@@ -59,8 +61,38 @@ const completeRestaurantProfile = async (userId, payload) => {
   return profile;
 };
 
+const getProfileForUser = async (userId, role) => {
+  if (role === "customer") {
+    return CustomerProfile.findOne({ userId }).lean();
+  }
+  if (role === "driver") {
+    return DriverProfile.findOne({ userId }).lean();
+  }
+  if (role === "restaurant") {
+    return RestaurantProfile.findOne({ userId }).lean();
+  }
+  throw createError("Unsupported role", 400);
+};
+
+const deleteProfileAndAccount = async (userId, role) => {
+  if (role === "customer") {
+    await CustomerProfile.deleteOne({ userId });
+  } else if (role === "driver") {
+    await DriverProfile.deleteOne({ userId });
+  } else if (role === "restaurant") {
+    await RestaurantProfile.deleteOne({ userId });
+  } else {
+    throw createError("Unsupported role", 400);
+  }
+
+  await OtpVerification.deleteMany({ userId });
+  await User.deleteOne({ _id: userId });
+};
+
 module.exports = {
   completeCustomerProfile,
   completeDriverProfile,
   completeRestaurantProfile,
+  getProfileForUser,
+  deleteProfileAndAccount,
 };

@@ -1,9 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { completeCustomerProfile } from "../api/profile";
+import { completeCustomerProfile, getProfile } from "../api/profile";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import styles from "./pages.module.css";
+
+const emptyPlaceholders = {
+  username: "",
+  phone: "",
+  street: "",
+  city: "",
+  state: "",
+  postalCode: "",
+};
+
+function pick(prev, current) {
+  const c = String(current ?? "").trim();
+  if (c) return c;
+  return String(prev ?? "").trim();
+}
 
 function CustomerProfileSetup() {
   const navigate = useNavigate();
@@ -13,8 +28,30 @@ function CustomerProfileSetup() {
   const [city, setCity] = useState("");
   const [state, setStateVal] = useState("");
   const [postalCode, setPostalCode] = useState("");
+  const [placeholders, setPlaceholders] = useState(emptyPlaceholders);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getProfile()
+      .then(({ profile }) => {
+        if (cancelled || !profile) return;
+        const addr = profile.addresses?.[0];
+        setPlaceholders({
+          username: profile.username ?? "",
+          phone: profile.phone ?? "",
+          street: addr?.street ?? "",
+          city: addr?.city ?? "",
+          state: addr?.state ?? "",
+          postalCode: addr?.postalCode ?? "",
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubmit = async (event) => {
     if (event && event.preventDefault) event.preventDefault();
@@ -24,13 +61,17 @@ function CustomerProfileSetup() {
       const addresses = [
         {
           label: "Home",
-          street,
-          city,
-          state,
-          postalCode,
+          street: pick(placeholders.street, street),
+          city: pick(placeholders.city, city),
+          state: pick(placeholders.state, state),
+          postalCode: pick(placeholders.postalCode, postalCode),
         },
       ];
-      await completeCustomerProfile({ username, phone, addresses });
+      await completeCustomerProfile({
+        username: pick(placeholders.username, username),
+        phone: pick(placeholders.phone, phone),
+        addresses,
+      });
       navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Could not save profile");
@@ -46,13 +87,49 @@ function CustomerProfileSetup() {
         <button type="submit" className={styles.srSubmit} aria-hidden tabIndex={-1}>
           Submit
         </button>
-        <Input label="Username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} />
-        <Input label="Phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <Input
+          label="Username"
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder={placeholders.username}
+        />
+        <Input
+          label="Phone"
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder={placeholders.phone}
+        />
         <p className={styles.hint}>Address</p>
-        <Input label="Street" type="text" value={street} onChange={(e) => setStreet(e.target.value)} />
-        <Input label="City" type="text" value={city} onChange={(e) => setCity(e.target.value)} />
-        <Input label="State" type="text" value={state} onChange={(e) => setStateVal(e.target.value)} />
-        <Input label="Postal code" type="text" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
+        <Input
+          label="Street"
+          type="text"
+          value={street}
+          onChange={(e) => setStreet(e.target.value)}
+          placeholder={placeholders.street}
+        />
+        <Input
+          label="City"
+          type="text"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          placeholder={placeholders.city}
+        />
+        <Input
+          label="State"
+          type="text"
+          value={state}
+          onChange={(e) => setStateVal(e.target.value)}
+          placeholder={placeholders.state}
+        />
+        <Input
+          label="Postal code"
+          type="text"
+          value={postalCode}
+          onChange={(e) => setPostalCode(e.target.value)}
+          placeholder={placeholders.postalCode}
+        />
         {error ? <div className={styles.error}>{error}</div> : null}
         <Button text={loading ? "Saving..." : "Complete profile"} disabled={loading} onClick={handleSubmit} />
       </form>

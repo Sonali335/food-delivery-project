@@ -21,3 +21,8 @@
   outline: 2px solid #2563eb;
   outline-offset: 1px;
 }
+
+.field::placeholder {
+  color: #78716c;
+  opacity: 1;
+}
