@@ -65,7 +65,10 @@ const signup = async ({ email, password, role }) => {
 
   await sendOtpEmail(normalizedEmail, otpPlain);
 
-  return { message: "OTP sent to your email for verification." };
+  return {
+    message: "OTP sent to your email for verification.",
+    otpExpiresAt: expiresAt.toISOString(),
+  };
 };
 
 const verifyOtp = async ({ email, otp }) => {
@@ -171,7 +174,10 @@ const requestPasswordReset = async ({ email }) => {
 
   await sendPasswordResetOtpEmail(user.email, otpPlain);
 
-  return { message: FORGOT_PASSWORD_RESPONSE };
+  return {
+    message: FORGOT_PASSWORD_RESPONSE,
+    otpExpiresAt: expiresAt.toISOString(),
+  };
 };
 
 const resetPasswordWithOtp = async ({ email, otp, newPassword }) => {

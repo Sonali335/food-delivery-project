@@ -1,22 +1,28 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { requestPasswordReset } from "../api/auth";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import styles from "./pages.module.css";
 
 function ForgotPassword() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [sentMeta, setSentMeta] = useState(null);
 
   const handleSubmit = async (event) => {
     if (event?.preventDefault) event.preventDefault();
     setError("");
     setLoading(true);
     try {
-      await requestPasswordReset({ email });
+      const data = await requestPasswordReset({ email });
+      setSentMeta({
+        email: email.trim(),
+        otpExpiresAt: data.otpExpiresAt ?? null,
+      });
       setSent(true);
     } catch (err) {
       setError(err.message || "Something went wrong");
@@ -34,9 +40,20 @@ function ForgotPassword() {
           minutes.
         </p>
         <p className={styles.hint}>
-          <Link to="/reset-password" state={{ email: email.trim() }}>
+          <button
+            type="button"
+            className={styles.linkButton}
+            onClick={() =>
+              navigate("/reset-password", {
+                state: {
+                  email: sentMeta?.email ?? email.trim(),
+                  otpExpiresAt: sentMeta?.otpExpiresAt ?? null,
+                },
+              })
+            }
+          >
             Enter reset code
-          </Link>{" "}
+          </button>{" "}
           · <Link to="/login">Back to log in</Link>
         </p>
       </div>

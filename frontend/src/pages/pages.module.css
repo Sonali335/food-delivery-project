@@ -31,6 +31,23 @@
   color: #2563eb;
 }
 
+.linkButton {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: inherit;
+  color: #2563eb;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.linkButton:hover {
+  color: #1d4ed8;
+}
+
 .cardGrid {
   display: flex;
   flex-direction: column;

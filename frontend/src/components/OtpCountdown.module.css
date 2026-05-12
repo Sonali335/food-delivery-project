@@ -1,0 +1,58 @@
+.wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 1rem 0;
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+}
+
+.label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1.125rem;
+  letter-spacing: 0.04em;
+  color: #0f172a;
+  font-family: ui-monospace, SFMono-Regular, "Segoe UI Mono", Menlo, monospace;
+}
+
+.urgent {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.urgent .value {
+  color: #b91c1c;
+}
+
+.expired {
+  flex-direction: column;
+  align-items: flex-start;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.expiredText {
+  margin: 0;
+  font-weight: 600;
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+
+.expiredHint {
+  margin: 0.35rem 0 0 0;
+  font-size: 0.8125rem;
+}
+
+.expiredHint a {
+  color: #2563eb;
+}

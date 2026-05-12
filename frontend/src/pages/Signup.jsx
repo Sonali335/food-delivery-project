@@ -38,8 +38,10 @@ function Signup() {
     }
     setLoading(true);
     try {
-      await signup({ email, password, role });
-      navigate("/verify-otp", { state: { email } });
+      const data = await signup({ email, password, role });
+      navigate("/verify-otp", {
+        state: { email, otpExpiresAt: data.otpExpiresAt ?? null },
+      });
     } catch (err) {
       setError(err.message || "Signup failed");
     } finally {

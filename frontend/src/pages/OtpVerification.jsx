@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { verifyOtp } from "../api/auth";
+import { resolveOtpExpiresAt } from "../constants/otp";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import OtpCountdown from "../components/OtpCountdown";
 import styles from "./pages.module.css";
 
 function initialEmail(locationState, queryEmail) {
@@ -26,9 +28,19 @@ function OtpVerification() {
   const [loading, setLoading] = useState(false);
   const [verified, setVerified] = useState(false);
 
+  const otpExpiresAt = useMemo(
+    () => resolveOtpExpiresAt(location.state?.otpExpiresAt),
+    [location.state?.otpExpiresAt]
+  );
+
   const handleSubmit = async (event) => {
     if (event?.preventDefault) event.preventDefault();
     setError("");
+    const end = Date.parse(otpExpiresAt);
+    if (Number.isFinite(end) && Date.now() > end) {
+      setError("This code has expired. Start again from sign up to receive a new code.");
+      return;
+    }
     setLoading(true);
     try {
       await verifyOtp({ email, otp });
@@ -63,6 +75,11 @@ function OtpVerification() {
         Enter the 6-digit code we sent you.{" "}
         <Link to="/">Back to signup</Link>
       </p>
+      <OtpCountdown
+        expiresAt={otpExpiresAt}
+        requestNewTo="/"
+        requestNewLabel="Back to sign up"
+      />
       <form onSubmit={handleSubmit}>
         <button type="submit" className={styles.srSubmit} aria-hidden tabIndex={-1}>
           Submit
