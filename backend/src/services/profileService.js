@@ -3,7 +3,9 @@ const DriverProfile = require("../models/DriverProfile");
 const RestaurantProfile = require("../models/RestaurantProfile");
 const OtpVerification = require("../models/OtpVerification");
 const User = require("../models/User");
+const PendingSignup = require("../models/PendingSignup");
 const bcrypt = require("bcrypt");
+const { getPasswordPolicyMessage } = require("../utils/passwordPolicy");
 
 const createError = (message, statusCode) => {
   const error = new Error(message);
@@ -82,8 +84,9 @@ const updatePassword = async (userId, { currentPassword, newPassword, confirmPas
   if (newPassword !== confirmPassword) {
     throw createError("New password and confirmation do not match", 400);
   }
-  if (newPassword.length < 6) {
-    throw createError("New password must be at least 6 characters", 400);
+  const policyMsg = getPasswordPolicyMessage(newPassword);
+  if (policyMsg) {
+    throw createError(policyMsg, 400);
   }
 
   const user = await User.findById(userId);
@@ -106,6 +109,8 @@ const updatePassword = async (userId, { currentPassword, newPassword, confirmPas
 };
 
 const deleteProfileAndAccount = async (userId, role) => {
+  const userDoc = await User.findById(userId).select("email").lean();
+
   if (role === "customer") {
     await CustomerProfile.deleteOne({ userId });
   } else if (role === "driver") {
@@ -117,6 +122,9 @@ const deleteProfileAndAccount = async (userId, role) => {
   }
 
   await OtpVerification.deleteMany({ userId });
+  if (userDoc?.email) {
+    await PendingSignup.deleteMany({ email: userDoc.email });
+  }
   await User.deleteOne({ _id: userId });
 };
 

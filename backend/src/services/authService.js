@@ -3,8 +3,10 @@ const bcrypt = require("bcrypt");
 const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/User");
 const OtpVerification = require("../models/OtpVerification");
+const PendingSignup = require("../models/PendingSignup");
 const CustomerProfile = require("../models/CustomerProfile");
 const generateToken = require("../utils/generateToken");
+const { getPasswordPolicyMessage } = require("../utils/passwordPolicy");
 const { sendOtpEmail, sendPasswordResetOtpEmail } = require("./emailService");
 
 const ROLES = ["customer", "driver", "restaurant"];
@@ -21,6 +23,11 @@ const createError = (message, statusCode) => {
   return error;
 };
 
+const assertPasswordMeetsPolicy = (password) => {
+  const msg = getPasswordPolicyMessage(password);
+  if (msg) throw createError(msg, 400);
+};
+
 const signup = async ({ email, password, role }) => {
   if (!email || !password || !role) {
     throw createError("email, password, and role are required", 400);
@@ -30,6 +37,8 @@ const signup = async ({ email, password, role }) => {
     throw createError("Invalid role", 400);
   }
 
+  assertPasswordMeetsPolicy(password);
+
   const normalizedEmail = email.toLowerCase().trim();
   const existingUser = await User.findOne({ email: normalizedEmail });
   if (existingUser) {
@@ -38,26 +47,23 @@ const signup = async ({ email, password, role }) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const user = await User.create({
-    email: normalizedEmail,
-    password: hashedPassword,
-    role,
-    accountStatus: "pending",
-    isVerified: false,
-  });
-
   const otpPlain = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
   const hashedOtp = await bcrypt.hash(otpPlain, 10);
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
-  await OtpVerification.create({
-    userId: user._id,
-    otp: hashedOtp,
-    expiresAt,
-    purpose: PURPOSE_SIGNUP,
-  });
+  await PendingSignup.findOneAndUpdate(
+    { email: normalizedEmail },
+    {
+      email: normalizedEmail,
+      passwordHash: hashedPassword,
+      role,
+      otp: hashedOtp,
+      expiresAt,
+    },
+    { upsert: true, new: true, runValidators: true }
+  );
 
-  await sendOtpEmail(user.email, otpPlain);
+  await sendOtpEmail(normalizedEmail, otpPlain);
 
   return { message: "OTP sent to your email for verification." };
 };
@@ -68,6 +74,38 @@ const verifyOtp = async ({ email, otp }) => {
   }
 
   const normalizedEmail = email.toLowerCase().trim();
+  const otpString = String(otp).trim();
+
+  const pending = await PendingSignup.findOne({ email: normalizedEmail });
+
+  if (pending) {
+    if (pending.expiresAt < new Date()) {
+      await PendingSignup.deleteOne({ _id: pending._id });
+      throw createError("Verification code has expired. Sign up again.", 400);
+    }
+
+    const matches = await bcrypt.compare(otpString, pending.otp);
+    if (!matches) {
+      throw createError("Invalid verification code", 400);
+    }
+
+    const dupe = await User.findOne({ email: normalizedEmail });
+    if (dupe) {
+      await PendingSignup.deleteOne({ _id: pending._id });
+      throw createError("Email already registered", 409);
+    }
+
+    await User.create({
+      email: normalizedEmail,
+      password: pending.passwordHash,
+      role: pending.role,
+      isVerified: true,
+      accountStatus: "active",
+    });
+    await PendingSignup.deleteOne({ _id: pending._id });
+    return { message: "Email verified successfully." };
+  }
+
   const user = await User.findOne({ email: normalizedEmail });
   if (!user) {
     throw createError("Invalid email or verification code", 400);
@@ -87,7 +125,6 @@ const verifyOtp = async ({ email, otp }) => {
     throw createError("Verification code has expired", 400);
   }
 
-  const otpString = String(otp).trim();
   const matches = await bcrypt.compare(otpString, otpRecord.otp);
   if (!matches) {
     throw createError("Invalid verification code", 400);
@@ -142,9 +179,7 @@ const resetPasswordWithOtp = async ({ email, otp, newPassword }) => {
     throw createError("email, otp, and newPassword are required", 400);
   }
 
-  if (String(newPassword).length < 8) {
-    throw createError("Password must be at least 8 characters", 400);
-  }
+  assertPasswordMeetsPolicy(newPassword);
 
   const normalizedEmail = email.toLowerCase().trim();
   const user = await User.findOne({ email: normalizedEmail });
@@ -263,6 +298,8 @@ const googleLogin = async ({ idToken }) => {
 
   const normalizedEmail = emailRaw.toLowerCase().trim();
   const displayName = payload.name || payload.given_name || "";
+
+  await PendingSignup.deleteMany({ email: normalizedEmail });
 
   let user = await User.findOne({ email: normalizedEmail });
 

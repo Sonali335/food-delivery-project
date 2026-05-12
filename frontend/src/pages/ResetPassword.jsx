@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { resetPasswordWithOtp } from "../api/auth";
+import { getPasswordPolicyMessage } from "../utils/passwordPolicy";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import styles from "./pages.module.css";
@@ -32,6 +33,12 @@ function ResetPassword() {
       return;
     }
 
+    const policyMsg = getPasswordPolicyMessage(newPassword);
+    if (policyMsg) {
+      setError(policyMsg);
+      return;
+    }
+
     setLoading(true);
     try {
       await resetPasswordWithOtp({ email, otp, newPassword });
@@ -47,7 +54,8 @@ function ResetPassword() {
     <div className={styles.page}>
       <h1 className={styles.title}>Reset password</h1>
       <p className={styles.hint}>
-        Enter the code from your email and choose a new password (at least 8 characters).{" "}
+        Enter the code from your email and choose a new password (8+ characters, one number, one
+        symbol).{" "}
         <Link to="/forgot-password">Request a new code</Link> · <Link to="/login">Log in</Link>
       </p>
       <form onSubmit={handleSubmit}>

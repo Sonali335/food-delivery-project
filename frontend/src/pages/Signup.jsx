@@ -1,6 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { googleLogin, signup } from "../api/auth";
+import { getPasswordPolicyMessage } from "../utils/passwordPolicy";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import {
@@ -30,6 +31,11 @@ function Signup() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+    const policyMsg = getPasswordPolicyMessage(password);
+    if (policyMsg) {
+      setError(policyMsg);
+      return;
+    }
     setLoading(true);
     try {
       await signup({ email, password, role });
@@ -141,7 +147,11 @@ function Signup() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          minLength={8}
         />
+        <p className={styles.hint}>
+          At least 8 characters, with at least one number and one symbol (!@#$% etc.).
+        </p>
 
         <fieldset className={styles.roleFieldset}>
           <legend className={styles.roleLegend}>I am a</legend>

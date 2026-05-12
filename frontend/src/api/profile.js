@@ -1,4 +1,5 @@
 import { getApiBase } from "./config";
+import { getPasswordPolicyMessage } from "../utils/passwordPolicy";
 
 const authHeader = () => {
   const token = localStorage.getItem("token");
@@ -116,8 +117,9 @@ const tryPasswordUpdateIfFilled = async ({
   if (np !== cf) {
     throw new Error("New password and confirmation do not match.");
   }
-  if (np.length < 6) {
-    throw new Error("New password must be at least 6 characters.");
+  const policyMsg = getPasswordPolicyMessage(np);
+  if (policyMsg) {
+    throw new Error(policyMsg);
   }
   await updatePassword({
     currentPassword: cur,

@@ -24,7 +24,7 @@ function PasswordUpdateFields({
         type="password"
         value={newPassword}
         onChange={(e) => onNewPasswordChange(e.target.value)}
-        placeholder="At least 6 characters"
+        placeholder="8+ chars, one number, one symbol"
       />
       <Input
         label="Confirm new password"
