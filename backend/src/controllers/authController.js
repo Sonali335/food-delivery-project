@@ -36,9 +36,29 @@ const googleLogin = async (req, res) => {
   }
 };
 
+const requestPasswordReset = async (req, res) => {
+  try {
+    const result = await authService.requestPasswordReset(req.body);
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
+const resetPasswordWithOtp = async (req, res) => {
+  try {
+    const result = await authService.resetPasswordWithOtp(req.body);
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   signup,
   verifyOtp,
   login,
   googleLogin,
+  requestPasswordReset,
+  resetPasswordWithOtp,
 };

@@ -5,10 +5,15 @@ const User = require("../models/User");
 const OtpVerification = require("../models/OtpVerification");
 const CustomerProfile = require("../models/CustomerProfile");
 const generateToken = require("../utils/generateToken");
-const { sendOtpEmail } = require("./emailService");
+const { sendOtpEmail, sendPasswordResetOtpEmail } = require("./emailService");
 
 const ROLES = ["customer", "driver", "restaurant"];
 const OTP_EXPIRY_MINUTES = 10;
+const PURPOSE_SIGNUP = "signup";
+const PURPOSE_PASSWORD_RESET = "password_reset";
+const signupOtpFilter = () => ({
+  $or: [{ purpose: PURPOSE_SIGNUP }, { purpose: { $exists: false } }],
+});
 
 const createError = (message, statusCode) => {
   const error = new Error(message);
@@ -49,6 +54,7 @@ const signup = async ({ email, password, role }) => {
     userId: user._id,
     otp: hashedOtp,
     expiresAt,
+    purpose: PURPOSE_SIGNUP,
   });
 
   await sendOtpEmail(user.email, otpPlain);
@@ -67,14 +73,17 @@ const verifyOtp = async ({ email, otp }) => {
     throw createError("Invalid email or verification code", 400);
   }
 
-  const otpRecord = await OtpVerification.findOne({ userId: user._id }).sort({ createdAt: -1 });
+  const otpRecord = await OtpVerification.findOne({
+    userId: user._id,
+    ...signupOtpFilter(),
+  }).sort({ createdAt: -1 });
 
   if (!otpRecord) {
     throw createError("No verification code found. Sign up again or request a new code.", 400);
   }
 
   if (otpRecord.expiresAt < new Date()) {
-    await OtpVerification.deleteMany({ userId: user._id });
+    await OtpVerification.deleteMany({ userId: user._id, ...signupOtpFilter() });
     throw createError("Verification code has expired", 400);
   }
 
@@ -87,9 +96,101 @@ const verifyOtp = async ({ email, otp }) => {
   user.isVerified = true;
   user.accountStatus = "active";
   await user.save();
-  await OtpVerification.deleteMany({ userId: user._id });
+  await OtpVerification.deleteMany({ userId: user._id, ...signupOtpFilter() });
 
   return { message: "Email verified successfully." };
+};
+
+const FORGOT_PASSWORD_RESPONSE =
+  "If an account exists with that email, a reset code was sent.";
+
+const requestPasswordReset = async ({ email }) => {
+  if (!email || typeof email !== "string") {
+    throw createError("email is required", 400);
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await User.findOne({ email: normalizedEmail });
+
+  if (!user || !user.password || user.accountStatus === "suspended") {
+    return { message: FORGOT_PASSWORD_RESPONSE };
+  }
+
+  await OtpVerification.deleteMany({
+    userId: user._id,
+    purpose: PURPOSE_PASSWORD_RESET,
+  });
+
+  const otpPlain = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
+  const hashedOtp = await bcrypt.hash(otpPlain, 10);
+  const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+  await OtpVerification.create({
+    userId: user._id,
+    otp: hashedOtp,
+    expiresAt,
+    purpose: PURPOSE_PASSWORD_RESET,
+  });
+
+  await sendPasswordResetOtpEmail(user.email, otpPlain);
+
+  return { message: FORGOT_PASSWORD_RESPONSE };
+};
+
+const resetPasswordWithOtp = async ({ email, otp, newPassword }) => {
+  if (!email || !otp || !newPassword) {
+    throw createError("email, otp, and newPassword are required", 400);
+  }
+
+  if (String(newPassword).length < 8) {
+    throw createError("Password must be at least 8 characters", 400);
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await User.findOne({ email: normalizedEmail });
+  if (!user || !user.password) {
+    throw createError("Invalid email or reset code", 400);
+  }
+
+  const otpRecord = await OtpVerification.findOne({
+    userId: user._id,
+    purpose: PURPOSE_PASSWORD_RESET,
+  }).sort({ createdAt: -1 });
+
+  if (!otpRecord) {
+    throw createError("Invalid email or reset code", 400);
+  }
+
+  if (otpRecord.expiresAt < new Date()) {
+    await OtpVerification.deleteMany({
+      userId: user._id,
+      purpose: PURPOSE_PASSWORD_RESET,
+    });
+    throw createError("Reset code has expired", 400);
+  }
+
+  const otpString = String(otp).trim();
+  const matches = await bcrypt.compare(otpString, otpRecord.otp);
+  if (!matches) {
+    throw createError("Invalid email or reset code", 400);
+  }
+
+  user.password = await bcrypt.hash(String(newPassword), 10);
+  if (!user.isVerified) {
+    user.isVerified = true;
+  }
+  if (user.accountStatus === "pending") {
+    user.accountStatus = "active";
+  }
+  await user.save();
+
+  await OtpVerification.deleteMany({
+    userId: user._id,
+    purpose: PURPOSE_PASSWORD_RESET,
+  });
+  await OtpVerification.deleteMany({ userId: user._id, ...signupOtpFilter() });
+
+  return { message: "Password updated. You can log in with your new password." };
 };
 
 const login = async ({ email, password }) => {
@@ -166,6 +267,7 @@ const googleLogin = async ({ idToken }) => {
   let user = await User.findOne({ email: normalizedEmail });
 
   if (!user) {
+    // Google already verified the email; no OTP signup flow.
     user = await User.create({
       email: normalizedEmail,
       role: "customer",
@@ -206,6 +308,8 @@ const googleLogin = async ({ idToken }) => {
 module.exports = {
   signup,
   verifyOtp,
+  requestPasswordReset,
+  resetPasswordWithOtp,
   login,
   googleLogin,
 };

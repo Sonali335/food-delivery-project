@@ -10,6 +10,13 @@ if (!process.env.JWT_SECRET || String(process.env.JWT_SECRET).trim() === "") {
   process.exit(1);
 }
 
+const { isSmtpConfigured } = require("./config/email");
+if (!isSmtpConfigured()) {
+  console.warn(
+    "[email] SMTP is not configured — OTP emails will not reach your inbox. Copy backend/.env.example into backend/.env and set SMTP_SERVICE=gmail (or SMTP_HOST) plus SMTP_USER and SMTP_PASS, then restart the server."
+  );
+}
+
 dns.setDefaultResultOrder("ipv4first");
 // Node can fail mongodb+srv SRV lookups on some Windows resolver setups; public DNS fixes it.
 if (process.platform === "win32" && process.env.MONGO_USE_SYSTEM_DNS !== "1") {

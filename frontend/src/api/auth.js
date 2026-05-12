@@ -60,4 +60,34 @@ const googleLogin = async ({ idToken }) => {
   return data;
 };
 
-export { signup, verifyOtp, login, googleLogin };
+const requestPasswordReset = async ({ email }) => {
+  const response = await fetch(`${getApiBase()}/auth/forgot-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || "Request failed");
+  }
+  return data;
+};
+
+const resetPasswordWithOtp = async ({ email, otp, newPassword }) => {
+  const response = await fetch(`${getApiBase()}/auth/reset-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, otp, newPassword }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || "Reset failed");
+  }
+  return data;
+};
+
+export { signup, verifyOtp, login, googleLogin, requestPasswordReset, resetPasswordWithOtp };

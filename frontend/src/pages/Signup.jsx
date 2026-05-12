@@ -107,6 +107,7 @@ function Signup() {
             ref={googleBtnRef}
             aria-busy={googleLoading}
           />
+          <p className={styles.hint}>No email code needed — Google has already verified your email.</p>
           <p className={styles.orDivider}>or sign up with email</p>
         </div>
       ) : import.meta.env.DEV ? (
