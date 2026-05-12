@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { completeDriverProfile, getProfile } from "../api/profile";
+import { completeDriverProfile, getProfile, tryPasswordUpdateIfFilled } from "../api/profile";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import PasswordUpdateFields from "../components/PasswordUpdateFields";
 import styles from "./pages.module.css";
 
 const emptyPlaceholders = {
@@ -27,6 +28,9 @@ function DriverProfileSetup() {
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [licenseNumber, setLicenseNumber] = useState("");
   const [placeholders, setPlaceholders] = useState(emptyPlaceholders);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -54,6 +58,11 @@ function DriverProfileSetup() {
     setError("");
     setLoading(true);
     try {
+      await tryPasswordUpdateIfFilled({
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
       await completeDriverProfile({
         username: pick(placeholders.username, username),
         phone: pick(placeholders.phone, phone),
@@ -110,6 +119,14 @@ function DriverProfileSetup() {
           value={licenseNumber}
           onChange={(e) => setLicenseNumber(e.target.value)}
           placeholder={placeholders.licenseNumber}
+        />
+        <PasswordUpdateFields
+          currentPassword={currentPassword}
+          onCurrentPasswordChange={setCurrentPassword}
+          newPassword={newPassword}
+          onNewPasswordChange={setNewPassword}
+          confirmPassword={confirmPassword}
+          onConfirmPasswordChange={setConfirmPassword}
         />
         {error ? <div className={styles.error}>{error}</div> : null}
         <Button text={loading ? "Saving..." : "Complete profile"} disabled={loading} onClick={handleSubmit} />

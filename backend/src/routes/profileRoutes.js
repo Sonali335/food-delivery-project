@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.get("/", authMiddleware, profileController.getProfile);
 router.post("/complete", authMiddleware, profileController.completeProfile);
+router.post("/password", authMiddleware, profileController.updatePassword);
 router.delete("/", authMiddleware, profileController.deleteProfile);
 
 module.exports = router;

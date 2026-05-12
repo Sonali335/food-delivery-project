@@ -3,6 +3,7 @@ const DriverProfile = require("../models/DriverProfile");
 const RestaurantProfile = require("../models/RestaurantProfile");
 const OtpVerification = require("../models/OtpVerification");
 const User = require("../models/User");
+const bcrypt = require("bcrypt");
 
 const createError = (message, statusCode) => {
   const error = new Error(message);
@@ -74,6 +75,36 @@ const getProfileForUser = async (userId, role) => {
   throw createError("Unsupported role", 400);
 };
 
+const updatePassword = async (userId, { currentPassword, newPassword, confirmPassword }) => {
+  if (!newPassword || !confirmPassword) {
+    throw createError("New password and confirm password are required", 400);
+  }
+  if (newPassword !== confirmPassword) {
+    throw createError("New password and confirmation do not match", 400);
+  }
+  if (newPassword.length < 6) {
+    throw createError("New password must be at least 6 characters", 400);
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw createError("User not found", 404);
+  }
+
+  if (user.password) {
+    if (!currentPassword) {
+      throw createError("Current password is required", 400);
+    }
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) {
+      throw createError("Current password is incorrect", 401);
+    }
+  }
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+};
+
 const deleteProfileAndAccount = async (userId, role) => {
   if (role === "customer") {
     await CustomerProfile.deleteOne({ userId });
@@ -94,5 +125,6 @@ module.exports = {
   completeDriverProfile,
   completeRestaurantProfile,
   getProfileForUser,
+  updatePassword,
   deleteProfileAndAccount,
 };

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { completeCustomerProfile, getProfile } from "../api/profile";
+import { completeCustomerProfile, getProfile, tryPasswordUpdateIfFilled } from "../api/profile";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import PasswordUpdateFields from "../components/PasswordUpdateFields";
 import styles from "./pages.module.css";
 
 const emptyPlaceholders = {
@@ -29,6 +30,9 @@ function CustomerProfileSetup() {
   const [state, setStateVal] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [placeholders, setPlaceholders] = useState(emptyPlaceholders);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -58,6 +62,11 @@ function CustomerProfileSetup() {
     setError("");
     setLoading(true);
     try {
+      await tryPasswordUpdateIfFilled({
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
       const addresses = [
         {
           label: "Home",
@@ -129,6 +138,14 @@ function CustomerProfileSetup() {
           value={postalCode}
           onChange={(e) => setPostalCode(e.target.value)}
           placeholder={placeholders.postalCode}
+        />
+        <PasswordUpdateFields
+          currentPassword={currentPassword}
+          onCurrentPasswordChange={setCurrentPassword}
+          newPassword={newPassword}
+          onNewPasswordChange={setNewPassword}
+          confirmPassword={confirmPassword}
+          onConfirmPasswordChange={setConfirmPassword}
         />
         {error ? <div className={styles.error}>{error}</div> : null}
         <Button text={loading ? "Saving..." : "Complete profile"} disabled={loading} onClick={handleSubmit} />

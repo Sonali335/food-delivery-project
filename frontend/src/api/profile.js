@@ -82,10 +82,54 @@ const deleteProfile = async () => {
   return result;
 };
 
+const updatePassword = async ({ currentPassword, newPassword, confirmPassword }) => {
+  const response = await fetch("http://localhost:5000/api/profile/password", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeader(),
+    },
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.message || "Could not update password");
+  }
+  return result;
+};
+
+/** If new/confirm are empty, skips. Otherwise validates and calls the API. */
+const tryPasswordUpdateIfFilled = async ({
+  currentPassword,
+  newPassword,
+  confirmPassword,
+}) => {
+  const np = String(newPassword ?? "").trim();
+  const cf = String(confirmPassword ?? "").trim();
+  const cur = String(currentPassword ?? "").trim();
+  if (!np && !cf) return;
+  if (!np || !cf) {
+    throw new Error("Enter both new password and confirm password.");
+  }
+  if (np !== cf) {
+    throw new Error("New password and confirmation do not match.");
+  }
+  if (np.length < 6) {
+    throw new Error("New password must be at least 6 characters.");
+  }
+  await updatePassword({
+    currentPassword: cur,
+    newPassword: np,
+    confirmPassword: cf,
+  });
+};
+
 export {
   getProfile,
   completeCustomerProfile,
   completeDriverProfile,
   completeRestaurantProfile,
   deleteProfile,
+  updatePassword,
+  tryPasswordUpdateIfFilled,
 };

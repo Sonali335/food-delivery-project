@@ -41,8 +41,18 @@ const deleteProfile = async (req, res) => {
   }
 };
 
+const updatePassword = async (req, res) => {
+  try {
+    await profileService.updatePassword(req.user._id, req.body);
+    return res.status(200).json({ message: "Password updated successfully." });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getProfile,
   completeProfile,
   deleteProfile,
+  updatePassword,
 };
