@@ -107,7 +107,19 @@ function RestaurantProfileSetup() {
           onConfirmPasswordChange={setConfirmPassword}
         />
         {error ? <div className={styles.error}>{error}</div> : null}
-        <Button text={loading ? "Saving..." : "Complete profile"} disabled={loading} onClick={handleSubmit} />
+        <div className={styles.actions}>
+          <Button
+            text="Back to dashboard"
+            variant="secondary"
+            onClick={() => navigate("/dashboard")}
+            disabled={false}
+          />
+          <Button
+            text={loading ? "Saving..." : "Complete profile"}
+            disabled={loading}
+            onClick={handleSubmit}
+          />
+        </div>
       </form>
     </div>
   );
