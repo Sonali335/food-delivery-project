@@ -45,13 +45,17 @@ const login = async ({ email, password }) => {
   return data;
 };
 
-const googleLogin = async ({ idToken }) => {
+const googleLogin = async ({ idToken, role }) => {
+  const body = { idToken };
+  if (role) {
+    body.role = role;
+  }
   const response = await fetch(`${getApiBase()}/auth/google`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ idToken }),
+    body: JSON.stringify(body),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {

@@ -271,7 +271,7 @@ const login = async ({ email, password }) => {
   return { user: userData, token };
 };
 
-const googleLogin = async ({ idToken }) => {
+const googleLogin = async ({ idToken, role: requestedRole }) => {
   if (!idToken) {
     throw createError("idToken is required", 400);
   }
@@ -311,24 +311,30 @@ const googleLogin = async ({ idToken }) => {
 
   if (!user) {
     // Google already verified the email; no OTP signup flow.
+    // Optional `role` from the client (e.g. Signup page) selects account type for new users only.
+    const newRole =
+      requestedRole && ROLES.includes(requestedRole) ? requestedRole : "customer";
+
     user = await User.create({
       email: normalizedEmail,
-      role: "customer",
+      role: newRole,
       isVerified: true,
       accountStatus: "active",
       lastLogin: new Date(),
     });
 
-    await CustomerProfile.findOneAndUpdate(
-      { userId: user._id },
-      {
-        userId: user._id,
-        username: displayName || normalizedEmail.split("@")[0],
-        phone: "pending",
-        addresses: [],
-      },
-      { upsert: true, new: true, runValidators: true }
-    );
+    if (newRole === "customer") {
+      await CustomerProfile.findOneAndUpdate(
+        { userId: user._id },
+        {
+          userId: user._id,
+          username: displayName || normalizedEmail.split("@")[0],
+          phone: "pending",
+          addresses: [],
+        },
+        { upsert: true, new: true, runValidators: true }
+      );
+    }
   } else {
     if (user.accountStatus === "suspended") {
       throw createError("Account is suspended", 403);

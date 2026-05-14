@@ -55,7 +55,7 @@ function Signup() {
       setError("");
       setGoogleLoading(true);
       try {
-        const result = await googleLogin({ idToken: response.credential });
+        const result = await googleLogin({ idToken: response.credential, role });
         localStorage.setItem("token", result.token);
         localStorage.setItem("role", result.role);
         navigate("/dashboard");
@@ -65,7 +65,7 @@ function Signup() {
         setGoogleLoading(false);
       }
     },
-    [navigate]
+    [navigate, role]
   );
 
   const googleCredentialRef = useRef(handleGoogleCredential);
