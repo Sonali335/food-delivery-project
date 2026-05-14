@@ -9,6 +9,11 @@ import CustomerProfileSetup from "./pages/CustomerProfileSetup";
 import DriverProfileSetup from "./pages/DriverProfileSetup";
 import RestaurantProfileSetup from "./pages/RestaurantProfileSetup";
 import Dashboard from "./pages/Dashboard";
+import RestaurantDashboard from "./pages/RestaurantDashboard";
+import MenuList from "./pages/MenuList";
+import MenuCreate from "./pages/MenuCreate";
+import MenuEdit from "./pages/MenuEdit";
+import CategoryManager from "./pages/CategoryManager";
 
 function App() {
   return (
@@ -50,6 +55,47 @@ function App() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/restaurant/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["restaurant"]}>
+            <RestaurantDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/restaurant/menu"
+        element={
+          <ProtectedRoute allowedRoles={["restaurant"]}>
+            <MenuList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/restaurant/menu/create"
+        element={
+          <ProtectedRoute allowedRoles={["restaurant"]}>
+            <MenuCreate />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/restaurant/menu/edit/:id"
+        element={
+          <ProtectedRoute allowedRoles={["restaurant"]}>
+            <MenuEdit />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/restaurant/categories"
+        element={
+          <ProtectedRoute allowedRoles={["restaurant"]}>
+            <CategoryManager />
           </ProtectedRoute>
         }
       />

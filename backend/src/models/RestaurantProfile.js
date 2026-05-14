@@ -15,6 +15,11 @@ const restaurantProfileSchema = new mongoose.Schema(
     openingHours: { type: String, default: null },
     ratingAverage: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
+    status: {
+      type: String,
+      enum: ["open", "closed", "busy"],
+      default: "open",
+    },
   },
   { timestamps: true }
 );

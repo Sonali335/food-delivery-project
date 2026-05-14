@@ -30,12 +30,18 @@ if (process.platform === "win32" && process.env.MONGO_USE_SYSTEM_DNS !== "1") {
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
+const menuRoutes = require("./routes/menuRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+const restaurantRoutes = require("./routes/restaurantRoutes");
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 app.use("/auth", authRoutes);
 app.use("/profile", profileRoutes);
+app.use("/api/menu", menuRoutes);
+app.use("/api/category", categoryRoutes);
+app.use("/api/restaurant", restaurantRoutes);
 
 // connect database
 connectDB();

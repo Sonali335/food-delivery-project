@@ -51,6 +51,13 @@ function Dashboard() {
       <p className={styles.success}>Logged in as: {role}</p>
       {deleteError ? <div className={styles.error}>{deleteError}</div> : null}
       <div className={styles.actions}>
+        {role === "restaurant" ? (
+          <Button
+            text="Restaurant dashboard"
+            onClick={() => navigate("/restaurant/dashboard")}
+            disabled={false}
+          />
+        ) : null}
         <Button
           text="Update profile"
           onClick={handleUpdateProfile}
