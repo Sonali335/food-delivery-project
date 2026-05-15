@@ -1,4 +1,9 @@
-const API = "http://localhost:5000/api";
+import { getApiBase } from "./config";
+
+const apiRoot = () => {
+  const base = getApiBase().replace(/\/$/, "");
+  return base ? `${base}/api` : "/api";
+};
 
 const authHeader = () => {
   const token = localStorage.getItem("token");
@@ -6,7 +11,7 @@ const authHeader = () => {
 };
 
 export const getStatus = async () => {
-  const response = await fetch(`${API}/restaurant/status`, {
+  const response = await fetch(`${apiRoot()}/restaurant/status`, {
     method: "GET",
     headers: {
       ...authHeader(),
@@ -20,7 +25,7 @@ export const getStatus = async () => {
 };
 
 export const updateStatus = async (status) => {
-  const response = await fetch(`${API}/restaurant/status`, {
+  const response = await fetch(`${apiRoot()}/restaurant/status`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",

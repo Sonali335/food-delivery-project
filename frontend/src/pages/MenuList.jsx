@@ -4,6 +4,12 @@ import { getMenuItems, deleteMenuItem } from "../api/menu";
 import Button from "../components/Button";
 import styles from "./pages.module.css";
 
+function categoryName(item) {
+  const c = item.categoryId;
+  if (c && typeof c === "object" && c.name) return c.name;
+  return "—";
+}
+
 function MenuList() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
@@ -58,16 +64,54 @@ function MenuList() {
                 borderBottom: "1px solid #d6d3d1",
                 padding: "0.75rem 0",
                 display: "flex",
-                flexDirection: "column",
-                gap: "0.5rem",
+                flexDirection: "row",
+                gap: "0.75rem",
+                alignItems: "flex-start",
               }}
             >
-              <span>
-                {item.name} — ${item.price} {item.isAvailable ? "" : "(unavailable)"}
-              </span>
-              <div className={styles.actions}>
-                <Button text="Edit" onClick={() => navigate(`/restaurant/menu/edit/${item._id}`)} disabled={false} />
-                <Button text="Delete" onClick={() => handleDelete(item._id)} disabled={false} />
+              {item.imageUrl ? (
+                <img
+                  src={item.imageUrl}
+                  alt=""
+                  width={56}
+                  height={56}
+                  style={{ objectFit: "cover", borderRadius: 4, flexShrink: 0 }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 56,
+                    height: 56,
+                    background: "#e7e5e4",
+                    borderRadius: 4,
+                    flexShrink: 0,
+                    fontSize: "0.65rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#78716c",
+                  }}
+                >
+                  No image
+                </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600 }}>{item.name}</div>
+                <div className={styles.hint} style={{ margin: "0.25rem 0" }}>
+                  {categoryName(item)}
+                </div>
+                <div>
+                  ${Number(item.price).toFixed(2)}
+                  {item.isAvailable ? "" : " · unavailable"}
+                </div>
+                <div className={styles.actions} style={{ marginTop: "0.5rem" }}>
+                  <Button
+                    text="Edit"
+                    onClick={() => navigate(`/restaurant/menu/edit/${item._id}`)}
+                    disabled={false}
+                  />
+                  <Button text="Delete" onClick={() => handleDelete(item._id)} disabled={false} />
+                </div>
               </div>
             </li>
           ))}

@@ -28,27 +28,36 @@ const createMenuItem = async (restaurantId, payload) => {
   if (price === undefined || price === null || Number.isNaN(Number(price))) {
     throw createError("price is required", 400);
   }
+  const priceNum = Number(price);
+  if (priceNum < 0) {
+    throw createError("price must be zero or greater", 400);
+  }
   if (!categoryId) {
     throw createError("categoryId is required", 400);
   }
 
   await assertValidCategoryForRestaurant(restaurantId, categoryId);
 
-  const item = await MenuItem.create({
+  const created = await MenuItem.create({
     restaurantId,
     name: String(name).trim(),
     description: description != null ? String(description) : "",
-    price: Number(price),
+    price: priceNum,
     categoryId,
     imageUrl: imageUrl != null && String(imageUrl).trim() !== "" ? String(imageUrl).trim() : null,
     isAvailable: typeof isAvailable === "boolean" ? isAvailable : true,
   });
 
-  return item;
+  return MenuItem.findById(created._id)
+    .populate({ path: "categoryId", select: "name" })
+    .lean();
 };
 
 const getMenuItemsByRestaurant = async (restaurantId) => {
-  return MenuItem.find({ restaurantId }).sort({ createdAt: -1 }).lean();
+  return MenuItem.find({ restaurantId })
+    .populate({ path: "categoryId", select: "name" })
+    .sort({ createdAt: -1 })
+    .lean();
 };
 
 const getMenuItemById = async (restaurantId, itemId) => {
@@ -56,7 +65,9 @@ const getMenuItemById = async (restaurantId, itemId) => {
     throw createError("Invalid menu item id", 400);
   }
 
-  const item = await MenuItem.findOne({ _id: itemId, restaurantId }).lean();
+  const item = await MenuItem.findOne({ _id: itemId, restaurantId })
+    .populate({ path: "categoryId", select: "name" })
+    .lean();
   if (!item) {
     throw createError("Menu item not found", 404);
   }
@@ -85,7 +96,11 @@ const updateMenuItem = async (restaurantId, itemId, payload) => {
     if (payload.price === null || Number.isNaN(Number(payload.price))) {
       throw createError("price is invalid", 400);
     }
-    updates.price = Number(payload.price);
+    const nextPrice = Number(payload.price);
+    if (nextPrice < 0) {
+      throw createError("price must be zero or greater", 400);
+    }
+    updates.price = nextPrice;
   }
   if (payload.categoryId !== undefined) {
     await assertValidCategoryForRestaurant(restaurantId, payload.categoryId);
@@ -107,7 +122,9 @@ const updateMenuItem = async (restaurantId, itemId, payload) => {
   const item = await MenuItem.findOneAndUpdate({ _id: itemId, restaurantId }, updates, {
     new: true,
     runValidators: true,
-  }).lean();
+  })
+    .populate({ path: "categoryId", select: "name" })
+    .lean();
 
   return item;
 };

@@ -31,12 +31,14 @@ export default defineConfig(({ mode }) => {
       proxy: {
         "/auth": { target: apiProxyTarget, changeOrigin: true },
         "/profile": { target: apiProxyTarget, changeOrigin: true },
+        "/api": { target: apiProxyTarget, changeOrigin: true },
       },
     },
     preview: {
       proxy: {
         "/auth": { target: apiProxyTarget, changeOrigin: true },
         "/profile": { target: apiProxyTarget, changeOrigin: true },
+        "/api": { target: apiProxyTarget, changeOrigin: true },
       },
     },
   };

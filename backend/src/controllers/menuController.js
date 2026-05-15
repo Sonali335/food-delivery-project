@@ -1,4 +1,5 @@
 const menuService = require("../services/menuService");
+const cloudinary = require("../config/cloudinary");
 
 const createMenuItem = async (req, res) => {
   try {
@@ -50,9 +51,33 @@ const uploadMenuImage = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "File is required" });
     }
-    return res.status(200).json({ url: "https://dummyimage.com/menu-item.jpg" });
+
+    if (
+      !process.env.CLOUDINARY_CLOUD_NAME ||
+      !process.env.CLOUDINARY_API_KEY ||
+      !process.env.CLOUDINARY_API_SECRET
+    ) {
+      return res.status(503).json({
+        message:
+          "Image upload is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.",
+      });
+    }
+
+    const secureUrl = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: "food-delivery/menu", resource_type: "image" },
+        (err, result) => {
+          if (err) reject(err);
+          else if (!result?.secure_url) reject(new Error("Upload returned no URL"));
+          else resolve(result.secure_url);
+        }
+      );
+      stream.end(req.file.buffer);
+    });
+
+    return res.status(200).json({ url: secureUrl });
   } catch (error) {
-    return res.status(error.statusCode || 500).json({ message: error.message });
+    return res.status(error.statusCode || 500).json({ message: error.message || "Upload failed" });
   }
 };
 

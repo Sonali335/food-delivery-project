@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getStatus, updateStatus } from "../api/restaurant";
+import Button from "../components/Button";
 import styles from "./pages.module.css";
 
-function StatusBlock() {
+function RestaurantDashboard() {
+  const navigate = useNavigate();
   const [status, setStatus] = useState("open");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,7 +29,7 @@ function StatusBlock() {
     };
   }, []);
 
-  const apply = async (next) => {
+  const applyStatus = async (next) => {
     setSaving(true);
     setError("");
     try {
@@ -41,52 +43,54 @@ function StatusBlock() {
   };
 
   return (
-    <div>
-      <h2 className={styles.title} style={{ fontSize: "1.125rem" }}>
-        Restaurant status
-      </h2>
-      {error ? <div className={styles.error}>{error}</div> : null}
-      {loading ? (
-        <p className={styles.hint}>Loading…</p>
-      ) : (
-        <>
-          <p className={styles.success}>Current: {status}</p>
-          <div className={styles.actions}>
-            <button type="button" disabled={saving} onClick={() => apply("open")}>
-              Open
-            </button>
-            <button type="button" disabled={saving} onClick={() => apply("closed")}>
-              Closed
-            </button>
-            <button type="button" disabled={saving} onClick={() => apply("busy")}>
-              Busy
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function RestaurantDashboard() {
-  return (
     <div className={styles.page}>
       <h1 className={styles.title}>Restaurant dashboard</h1>
-      <p className={styles.hint}>Choose an area to manage.</p>
-      <div className={styles.cardGrid}>
-        <Link className={styles.linkButton} to="/restaurant/menu">
-          Manage menu items
-        </Link>
-        <Link className={styles.linkButton} to="/restaurant/categories">
-          Manage categories
-        </Link>
-        <Link className={styles.linkButton} to="/restaurant/dashboard#status">
-          Update restaurant status
-        </Link>
+
+      <section style={{ marginBottom: "1.5rem" }}>
+        <h2 className={styles.title} style={{ fontSize: "1.125rem" }}>
+          Current restaurant status
+        </h2>
+        {error ? <div className={styles.error}>{error}</div> : null}
+        {loading ? (
+          <p className={styles.hint}>Loading status…</p>
+        ) : (
+          <p className={styles.success} style={{ marginBottom: "0.75rem" }}>
+            {status}
+          </p>
+        )}
+      </section>
+
+      <div className={styles.actions} style={{ marginBottom: "1.5rem" }}>
+        <Button text="Manage menu" onClick={() => navigate("/restaurant/menu")} disabled={false} />
+        <Button
+          text="Manage categories"
+          onClick={() => navigate("/restaurant/categories")}
+          disabled={false}
+        />
+        <Button
+          text="Change status"
+          onClick={() => document.getElementById("status")?.scrollIntoView({ behavior: "smooth" })}
+          disabled={false}
+        />
       </div>
-      <div id="status" style={{ marginTop: "2rem" }}>
-        <StatusBlock />
-      </div>
+
+      <section id="status">
+        <h2 className={styles.title} style={{ fontSize: "1.125rem" }}>
+          Change status
+        </h2>
+        <p className={styles.hint}>Set whether you are accepting orders.</p>
+        <div className={styles.actions}>
+          <button type="button" disabled={saving || loading} onClick={() => applyStatus("open")}>
+            Open
+          </button>
+          <button type="button" disabled={saving || loading} onClick={() => applyStatus("closed")}>
+            Closed
+          </button>
+          <button type="button" disabled={saving || loading} onClick={() => applyStatus("busy")}>
+            Busy
+          </button>
+        </div>
+      </section>
     </div>
   );
 }

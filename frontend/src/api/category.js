@@ -1,4 +1,9 @@
-const API = "http://localhost:5000/api";
+import { getApiBase } from "./config";
+
+const apiRoot = () => {
+  const base = getApiBase().replace(/\/$/, "");
+  return base ? `${base}/api` : "/api";
+};
 
 const authHeader = () => {
   const token = localStorage.getItem("token");
@@ -6,7 +11,7 @@ const authHeader = () => {
 };
 
 export const getCategories = async () => {
-  const response = await fetch(`${API}/category/`, {
+  const response = await fetch(`${apiRoot()}/category/`, {
     method: "GET",
     headers: {
       ...authHeader(),
@@ -20,7 +25,7 @@ export const getCategories = async () => {
 };
 
 export const createCategory = async (data) => {
-  const response = await fetch(`${API}/category/`, {
+  const response = await fetch(`${apiRoot()}/category/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -36,7 +41,7 @@ export const createCategory = async (data) => {
 };
 
 export const deleteCategory = async (id) => {
-  const response = await fetch(`${API}/category/${id}`, {
+  const response = await fetch(`${apiRoot()}/category/${id}`, {
     method: "DELETE",
     headers: {
       ...authHeader(),

@@ -11,7 +11,8 @@ function MenuCreate() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [pickedFile, setPickedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -36,16 +37,19 @@ function MenuCreate() {
     };
   }, []);
 
-  const handleImage = async (e) => {
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    setError("");
-    try {
-      const data = await uploadMenuImage(file);
-      if (data.url) setImageUrl(data.url);
-    } catch (err) {
-      setError(err.message || "Image upload failed");
-    }
+    setPickedFile(file || null);
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : null;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -53,12 +57,17 @@ function MenuCreate() {
     setSaving(true);
     setError("");
     try {
+      let imageUrl = null;
+      if (pickedFile) {
+        const uploaded = await uploadMenuImage(pickedFile);
+        imageUrl = uploaded.url || null;
+      }
       await createMenuItem({
         name,
         description,
         price: Number(price),
         categoryId,
-        imageUrl: imageUrl || null,
+        imageUrl,
       });
       navigate("/restaurant/menu");
     } catch (err) {
@@ -104,12 +113,14 @@ function MenuCreate() {
           </select>
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-          Image (placeholder upload)
-          <input type="file" accept="image/*" onChange={handleImage} />
-          {imageUrl ? <span className={styles.hint}>URL: {imageUrl}</span> : null}
+          Image (optional — uploaded on save via Cloudinary)
+          <input type="file" accept="image/*" onChange={handleFileChange} />
         </label>
+        {previewUrl ? (
+          <img src={previewUrl} alt="" width={120} height={120} style={{ objectFit: "cover", borderRadius: 4 }} />
+        ) : null}
         <button type="submit" disabled={saving || !categories.length}>
-          {saving ? "Saving…" : "Save"}
+          {saving ? (pickedFile ? "Uploading & saving…" : "Saving…") : "Save"}
         </button>
       </form>
       <p className={styles.hint}>

@@ -73,7 +73,7 @@ Categories belong to the restaurant (`restaurantId` = authenticated user `_id`).
 
 ### `POST /api/category/`
 
-Creates a category.
+Creates a category. Duplicate names (case-insensitive, same restaurant) return **409**.
 
 **Body (JSON):**
 
@@ -148,7 +148,7 @@ Creates a menu item.
 
 ### `GET /api/menu/`
 
-Lists all menu items for this restaurant (newest first).
+Lists all menu items for this restaurant (newest first). Each item’s `categoryId` is **populated** with `{ _id, name }` for display.
 
 **Response (200):**
 
@@ -213,15 +213,23 @@ Deletes a menu item owned by this restaurant.
 
 ### `POST /api/menu/upload-image`
 
-**Placeholder** image upload (no file storage). Accepts **`multipart/form-data`** with a single file field named **`file`**.
+Uploads an image to **Cloudinary** (server-side). Requires env vars: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
+
+Accepts **`multipart/form-data`** with a single file field named **`file`**.
 
 **Response (200):**
 
 ```json
-{ "url": "https://dummyimage.com/menu-item.jpg" }
+{ "url": "https://res.cloudinary.com/.../image.jpg" }
 ```
 
-**Errors:** `400` if no file is present (`{ "message": "File is required" }`).
+The value is Cloudinary’s **`secure_url`** (exposed as `url` for the frontend).
+
+**Errors:**
+
+- `400` if no file (`{ "message": "File is required" }`)
+- `503` if Cloudinary is not configured
+- `500` if the upload fails
 
 ---
 
