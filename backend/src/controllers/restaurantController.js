@@ -19,7 +19,10 @@ const updateRestaurantStatus = async (req, res) => {
   }
 };
 
+const getStatus = getRestaurantStatus;
+
 module.exports = {
   getRestaurantStatus,
+  getStatus,
   updateRestaurantStatus,
 };

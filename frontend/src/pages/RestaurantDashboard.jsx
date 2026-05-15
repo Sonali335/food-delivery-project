@@ -42,25 +42,47 @@ function RestaurantDashboard() {
     }
   };
 
+  const normalizedStatus = (status || "open").toLowerCase();
+  const statusLabel =
+    normalizedStatus === "open" || normalizedStatus === "closed" || normalizedStatus === "busy"
+      ? normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1)
+      : "Open";
+
+  const badgeStyle = (() => {
+    const base = {
+      display: "inline-block",
+      marginTop: "0.5rem",
+      marginBottom: "0.25rem",
+      padding: "0.35rem 0.65rem",
+      borderRadius: "6px",
+      fontSize: "0.875rem",
+      fontWeight: 600,
+    };
+    if (normalizedStatus === "open") {
+      return { ...base, backgroundColor: "#d1fae5", color: "#065f46" };
+    }
+    if (normalizedStatus === "closed") {
+      return { ...base, backgroundColor: "#fee2e2", color: "#991b1b" };
+    }
+    if (normalizedStatus === "busy") {
+      return { ...base, backgroundColor: "#fef9c3", color: "#854d0e" };
+    }
+    return { ...base, backgroundColor: "#d1fae5", color: "#065f46" };
+  })();
+
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>Restaurant dashboard</h1>
+      {loading ? (
+        <span className={styles.hint} style={{ display: "inline-block", marginTop: "0.5rem" }}>
+          Loading status…
+        </span>
+      ) : (
+        <span style={badgeStyle}>Status: {statusLabel}</span>
+      )}
+      {error ? <div className={styles.error}>{error}</div> : null}
 
-      <section style={{ marginBottom: "1.5rem" }}>
-        <h2 className={styles.title} style={{ fontSize: "1.125rem" }}>
-          Current restaurant status
-        </h2>
-        {error ? <div className={styles.error}>{error}</div> : null}
-        {loading ? (
-          <p className={styles.hint}>Loading status…</p>
-        ) : (
-          <p className={styles.success} style={{ marginBottom: "0.75rem" }}>
-            {status}
-          </p>
-        )}
-      </section>
-
-      <div className={styles.actions} style={{ marginBottom: "1.5rem" }}>
+      <div className={styles.actions} style={{ marginTop: "1.25rem", marginBottom: "1.5rem" }}>
         <Button text="Manage menu" onClick={() => navigate("/restaurant/menu")} disabled={false} />
         <Button
           text="Manage categories"
