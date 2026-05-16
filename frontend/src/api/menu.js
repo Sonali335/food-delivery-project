@@ -1,17 +1,12 @@
 import { getApiBase } from "./config";
 
-const apiRoot = () => {
-  const base = getApiBase().replace(/\/$/, "");
-  return base ? `${base}/api` : "/api";
-};
-
 const authHeader = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 export const getMenuItems = async () => {
-  const response = await fetch(`${apiRoot()}/menu/`, {
+  const response = await fetch(`${getApiBase()}/menu/`, {
     method: "GET",
     headers: {
       ...authHeader(),
@@ -25,7 +20,7 @@ export const getMenuItems = async () => {
 };
 
 export const getMenuItem = async (id) => {
-  const response = await fetch(`${apiRoot()}/menu/${id}`, {
+  const response = await fetch(`${getApiBase()}/menu/${id}`, {
     method: "GET",
     headers: {
       ...authHeader(),
@@ -39,7 +34,7 @@ export const getMenuItem = async (id) => {
 };
 
 export const createMenuItem = async (data) => {
-  const response = await fetch(`${apiRoot()}/menu/`, {
+  const response = await fetch(`${getApiBase()}/menu/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -55,7 +50,7 @@ export const createMenuItem = async (data) => {
 };
 
 export const updateMenuItem = async (id, data) => {
-  const response = await fetch(`${apiRoot()}/menu/${id}`, {
+  const response = await fetch(`${getApiBase()}/menu/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -71,7 +66,7 @@ export const updateMenuItem = async (id, data) => {
 };
 
 export const deleteMenuItem = async (id) => {
-  const response = await fetch(`${apiRoot()}/menu/${id}`, {
+  const response = await fetch(`${getApiBase()}/menu/${id}`, {
     method: "DELETE",
     headers: {
       ...authHeader(),
@@ -88,7 +83,7 @@ export const uploadMenuImage = async (file) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${apiRoot()}/menu/upload-image`, {
+  const response = await fetch(`${getApiBase()}/menu/upload-image`, {
     method: "POST",
     headers: {
       ...authHeader(),

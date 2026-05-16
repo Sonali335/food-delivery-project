@@ -1,17 +1,12 @@
 import { getApiBase } from "./config";
 
-const apiRoot = () => {
-  const base = getApiBase().replace(/\/$/, "");
-  return base ? `${base}/api` : "/api";
-};
-
 const authHeader = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 export const getCategories = async () => {
-  const response = await fetch(`${apiRoot()}/category/`, {
+  const response = await fetch(`${getApiBase()}/category/`, {
     method: "GET",
     headers: {
       ...authHeader(),
@@ -25,7 +20,7 @@ export const getCategories = async () => {
 };
 
 export const createCategory = async (data) => {
-  const response = await fetch(`${apiRoot()}/category/`, {
+  const response = await fetch(`${getApiBase()}/category/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -41,7 +36,7 @@ export const createCategory = async (data) => {
 };
 
 export const deleteCategory = async (id) => {
-  const response = await fetch(`${apiRoot()}/category/${id}`, {
+  const response = await fetch(`${getApiBase()}/category/${id}`, {
     method: "DELETE",
     headers: {
       ...authHeader(),

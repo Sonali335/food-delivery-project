@@ -39,9 +39,9 @@ app.use(express.json());
 app.use(cors());
 app.use("/auth", authRoutes);
 app.use("/profile", profileRoutes);
-app.use("/api/menu", menuRoutes);
-app.use("/api/category", categoryRoutes);
-app.use("/api/restaurant", restaurantRoutes);
+app.use("/menu", menuRoutes);
+app.use("/category", categoryRoutes);
+app.use("/restaurant", restaurantRoutes);
 
 // connect database
 connectDB();
