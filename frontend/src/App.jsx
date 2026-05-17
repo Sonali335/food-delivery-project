@@ -10,6 +10,7 @@ import DriverProfileSetup from "./pages/DriverProfileSetup";
 import RestaurantProfileSetup from "./pages/RestaurantProfileSetup";
 import Dashboard from "./pages/Dashboard";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
+import DriverDashboard from "./pages/DriverDashboard";
 import MenuList from "./pages/MenuList";
 import MenuCreate from "./pages/MenuCreate";
 import MenuEdit from "./pages/MenuEdit";
@@ -59,6 +60,14 @@ function App() {
         }
       />
 
+      <Route
+        path="/driver/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["driver"]}>
+            <DriverDashboard />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/restaurant/dashboard"
         element={
