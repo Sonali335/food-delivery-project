@@ -42,6 +42,16 @@ function DriverDashboard() {
         </>
       )}
       {error ? <div className={styles.error}>{error}</div> : null}
+
+      <section style={{ marginTop: "1rem" }}>
+        <h2 className={styles.title} style={{ fontSize: "1.125rem" }}>
+          Earnings Summary
+        </h2>
+        <p>Today&apos;s Earnings: $0.00</p>
+        <p>Weekly Earnings: $0.00</p>
+        <p>Total Earnings: $0.00</p>
+      </section>
+
       <div className={styles.actions} style={{ marginTop: "1rem" }}>
         <button type="button">Toggle Availability</button>
         <button type="button">My Deliveries</button>
