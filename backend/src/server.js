@@ -33,6 +33,7 @@ const profileRoutes = require("./routes/profileRoutes");
 const menuRoutes = require("./routes/menuRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const restaurantRoutes = require("./routes/restaurantRoutes");
+const driverRoutes = require("./routes/driverRoutes");
 
 const app = express();
 app.use(express.json());
@@ -42,6 +43,7 @@ app.use("/profile", profileRoutes);
 app.use("/menu", menuRoutes);
 app.use("/category", categoryRoutes);
 app.use("/restaurant", restaurantRoutes);
+app.use("/api/driver", driverRoutes);
 
 // connect database
 connectDB();

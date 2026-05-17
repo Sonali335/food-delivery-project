@@ -34,6 +34,7 @@ export default defineConfig(({ mode }) => {
         "/menu": { target: apiProxyTarget, changeOrigin: true },
         "/category": { target: apiProxyTarget, changeOrigin: true },
         "/restaurant": { target: apiProxyTarget, changeOrigin: true },
+        "/api": { target: apiProxyTarget, changeOrigin: true },
       },
     },
     preview: {
@@ -43,6 +44,7 @@ export default defineConfig(({ mode }) => {
         "/menu": { target: apiProxyTarget, changeOrigin: true },
         "/category": { target: apiProxyTarget, changeOrigin: true },
         "/restaurant": { target: apiProxyTarget, changeOrigin: true },
+        "/api": { target: apiProxyTarget, changeOrigin: true },
       },
     },
   };

@@ -20,6 +20,10 @@ const driverProfileSchema = new mongoose.Schema(
     },
     ratingAverage: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
+    location: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
   },
   { timestamps: true }
 );
