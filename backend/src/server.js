@@ -34,6 +34,7 @@ const menuRoutes = require("./routes/menuRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const restaurantRoutes = require("./routes/restaurantRoutes");
 const driverRoutes = require("./routes/driverRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 
 const app = express();
 app.use(express.json());
@@ -44,6 +45,7 @@ app.use("/menu", menuRoutes);
 app.use("/category", categoryRoutes);
 app.use("/restaurant", restaurantRoutes);
 app.use("/api/driver", driverRoutes);
+app.use("/api/orders", orderRoutes);
 
 // connect database
 connectDB();

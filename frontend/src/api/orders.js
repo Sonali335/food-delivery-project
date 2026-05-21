@@ -1,0 +1,78 @@
+import { getApiBase } from "./config";
+
+const authHeader = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const parseResponse = async (response) => {
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.message || "Order request failed");
+  }
+  return result;
+};
+
+export const createOrder = async (data) => {
+  const response = await fetch(`${getApiBase()}/api/orders`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeader(),
+    },
+    body: JSON.stringify(data),
+  });
+  return parseResponse(response);
+};
+
+export const getOrder = async (id) => {
+  const response = await fetch(`${getApiBase()}/api/orders/${id}`, {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+    },
+  });
+  return parseResponse(response);
+};
+
+export const getCustomerOrders = async () => {
+  const response = await fetch(`${getApiBase()}/api/orders/customer`, {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+    },
+  });
+  return parseResponse(response);
+};
+
+export const getRestaurantOrders = async () => {
+  const response = await fetch(`${getApiBase()}/api/orders/restaurant`, {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+    },
+  });
+  return parseResponse(response);
+};
+
+export const getDriverOrders = async () => {
+  const response = await fetch(`${getApiBase()}/api/orders/driver`, {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+    },
+  });
+  return parseResponse(response);
+};
+
+export const updateOrderStatus = async (id, status) => {
+  const response = await fetch(`${getApiBase()}/api/orders/${id}/status`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeader(),
+    },
+    body: JSON.stringify({ status }),
+  });
+  return parseResponse(response);
+};

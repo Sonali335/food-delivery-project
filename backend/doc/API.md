@@ -15,6 +15,7 @@
 | [`API.md`](API.md) (this file) | Health, auth, profile |
 | [`restaurant.md`](restaurant.md) | Menu, categories, restaurant status (`/menu`, `/category`, `/restaurant`) |
 | [`driver.md`](driver.md) | Driver location (`/api/driver`) |
+| [`orders.md`](orders.md) | Order lifecycle (`/api/orders`) |
 
 **Route prefixes (overview)**
 
@@ -24,6 +25,7 @@
 | `/profile` | Profile CRUD for all roles |
 | `/menu`, `/category`, `/restaurant` | Restaurant menu and status |
 | `/api/driver` | Driver-specific APIs (location) |
+| `/api/orders` | Order lifecycle (create, list, status updates) |
 
 **Default JSON rules**
 
@@ -683,6 +685,17 @@ Mongoose address field validation failures may surface as **500** depending on m
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
 | `PATCH` | `/api/driver/location` | Bearer JWT, role `driver` | Update `DriverProfile.location` (`lat`, `lng`) |
+
+### Orders (`orders.md`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `POST` | `/api/orders` | Bearer JWT, role `customer` | Create order (`PLACED`) |
+| `GET` | `/api/orders/customer` | Bearer JWT, role `customer` | List customer orders |
+| `GET` | `/api/orders/restaurant` | Bearer JWT, role `restaurant` | List restaurant orders |
+| `GET` | `/api/orders/driver` | Bearer JWT, role `driver` | List driver-assigned orders |
+| `GET` | `/api/orders/:id` | Bearer JWT, related party | Get one order |
+| `PATCH` | `/api/orders/:id/status` | Bearer JWT, role per transition | Update order status |
 
 ---
 

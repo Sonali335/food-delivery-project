@@ -18,6 +18,7 @@ A web application for food delivery that connects **customers**, **drivers**, an
 | [`backend/doc/API.md`](backend/doc/API.md) | Auth, profile, health |
 | [`backend/doc/restaurant.md`](backend/doc/restaurant.md) | Menu, categories, restaurant status |
 | [`backend/doc/driver.md`](backend/doc/driver.md) | Driver location API |
+| [`backend/doc/orders.md`](backend/doc/orders.md) | Order lifecycle API |
 
 **API base URL (development):** `http://localhost:5000`
 
@@ -29,6 +30,7 @@ A web application for food delivery that connects **customers**, **drivers**, an
 | `/profile` | All roles (profile CRUD) |
 | `/menu`, `/category`, `/restaurant` | Restaurants |
 | `/api/driver` | Drivers (live location) |
+| `/api/orders` | Orders (create, list, status lifecycle) |
 
 ## Frontend routes (protected unless noted)
 
