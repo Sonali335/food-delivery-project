@@ -8,6 +8,23 @@
 
 `http://localhost:5000`
 
+**Related documentation**
+
+| Document | Scope |
+| -------- | ----- |
+| [`API.md`](API.md) (this file) | Health, auth, profile |
+| [`restaurant.md`](restaurant.md) | Menu, categories, restaurant status (`/menu`, `/category`, `/restaurant`) |
+| [`driver.md`](driver.md) | Driver location (`/api/driver`) |
+
+**Route prefixes (overview)**
+
+| Prefix | Role / purpose |
+| ------ | -------------- |
+| `/auth` | Signup, login, OTP, password reset |
+| `/profile` | Profile CRUD for all roles |
+| `/menu`, `/category`, `/restaurant` | Restaurant menu and status |
+| `/api/driver` | Driver-specific APIs (location) |
+
 **Default JSON rules**
 
 - Requests that send JSON use header:  
@@ -503,12 +520,15 @@ Mongoose address field validation failures may surface as **500** depending on m
     "availabilityStatus": "offline",
     "ratingAverage": 0,
     "ratingCount": 0,
+    "location": null,
     "createdAt": "…",
     "updatedAt": "…",
     "__v": 0
   }
 }
 ```
+
+`location` is optional until set via **`PATCH /api/driver/location`** (see [`driver.md`](driver.md)).
 
 **Service validation failures**
 
@@ -631,6 +651,8 @@ Mongoose address field validation failures may surface as **500** depending on m
 
 ## Endpoint summary
 
+### Auth & profile (this document)
+
 | Method   | Exact path                                      | Auth | Purpose |
 |----------|-------------------------------------------------|------|---------|
 | `GET`    | `http://localhost:5000/`                        | none | Health (plain text) |
@@ -644,6 +666,23 @@ Mongoose address field validation failures may surface as **500** depending on m
 | `POST`   | `http://localhost:5000/profile/complete`      | Bearer JWT | Upsert profile by role |
 | `POST`   | `http://localhost:5000/profile/password`      | Bearer JWT | Update password |
 | `DELETE` | `http://localhost:5000/profile`                 | Bearer JWT | Delete profile + pending signup + user account |
+
+### Restaurant (`restaurant.md`)
+
+| Method   | Path | Auth | Purpose |
+|----------|------|------|---------|
+| `GET` / `PATCH` | `/restaurant/status` | Bearer JWT, role `restaurant` | Read / update operational status |
+| `POST` / `GET` | `/category/` | Bearer JWT, role `restaurant` | Create / list categories |
+| `DELETE` | `/category/:id` | Bearer JWT, role `restaurant` | Delete category |
+| `POST` / `GET` | `/menu/` | Bearer JWT, role `restaurant` | Create / list menu items |
+| `GET` / `PATCH` / `DELETE` | `/menu/:id` | Bearer JWT, role `restaurant` | Read / update / delete menu item |
+| `POST` | `/menu/upload-image` | Bearer JWT, role `restaurant` | Upload menu image (Cloudinary) |
+
+### Driver (`driver.md`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `PATCH` | `/api/driver/location` | Bearer JWT, role `driver` | Update `DriverProfile.location` (`lat`, `lng`) |
 
 ---
 

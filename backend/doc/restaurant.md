@@ -2,6 +2,8 @@
 
 These endpoints support **restaurant menu management** and **restaurant status**. They are mounted at `/menu`, `/category`, and `/restaurant` in `server.js`.
 
+**See also:** [`API.md`](API.md) (auth & profile), [`driver.md`](driver.md) (driver location).
+
 ## Authentication and role
 
 Every route below requires:
