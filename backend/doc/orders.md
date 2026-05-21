@@ -113,6 +113,23 @@ Invalid transitions return **400** with a clear `message`. Wrong role returns **
 
 ---
 
-## Next phase (not implemented yet)
+## Real-time updates (Socket.io)
 
-Emit Socket.io events from `updateOrderStatus` when real-time updates are added.
+On create and status change, the server emits **`order:update`** to:
+
+- `customer:<customerId>`
+- `restaurant:<restaurantId>`
+- `driver:<driverId>` when assigned
+- `drivers:pool` when status is `PREPARING` and no driver yet
+
+**Payload:**
+
+```json
+{
+  "orderId": "...",
+  "status": "PREPARING",
+  "updatedAt": "..."
+}
+```
+
+Connect with JWT in query: `?token=<JWT>`. Client: `frontend/src/socket.js`.

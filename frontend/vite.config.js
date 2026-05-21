@@ -30,11 +30,13 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         "/api": { target: apiProxyTarget, changeOrigin: true },
+        "/socket.io": { target: apiProxyTarget, changeOrigin: true, ws: true },
       },
     },
     preview: {
       proxy: {
         "/api": { target: apiProxyTarget, changeOrigin: true },
+        "/socket.io": { target: apiProxyTarget, changeOrigin: true, ws: true },
       },
     },
   };

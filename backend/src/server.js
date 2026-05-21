@@ -1,7 +1,9 @@
 const path = require("path");
 const dns = require("dns");
+const http = require("http");
 const express = require("express");
 const cors = require("cors");
+const { initSocket } = require("../socket");
 
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
 
@@ -54,5 +56,8 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
+const server = http.createServer(app);
+initSocket(server);
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

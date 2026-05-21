@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getStatus, updateStatus } from "../api/restaurant";
+import { getRestaurantOrders, updateOrderStatus } from "../api/orders";
+import { connectSocket } from "../socket";
 import Button from "../components/Button";
 import styles from "./pages.module.css";
 
@@ -10,6 +12,10 @@ function RestaurantDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState("");
+  const [orderActionId, setOrderActionId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,6 +34,63 @@ function RestaurantDashboard() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadOrders = async () => {
+      setOrdersError("");
+      try {
+        const { orders: list } = await getRestaurantOrders();
+        if (!cancelled) setOrders(list || []);
+      } catch (e) {
+        if (!cancelled) setOrdersError(e.message || "Failed to load orders");
+      } finally {
+        if (!cancelled) setOrdersLoading(false);
+      }
+    };
+
+    loadOrders();
+
+    const socket = connectSocket();
+    if (!socket) return () => {
+      cancelled = true;
+    };
+
+    const onOrderUpdate = (payload) => {
+      setOrders((prev) => {
+        const idx = prev.findIndex((o) => String(o._id) === payload.orderId);
+        if (idx >= 0) {
+          return prev.map((o) =>
+            String(o._id) === payload.orderId
+              ? { ...o, status: payload.status, updatedAt: payload.updatedAt }
+              : o
+          );
+        }
+        loadOrders();
+        return prev;
+      });
+    };
+
+    socket.on("order:update", onOrderUpdate);
+
+    return () => {
+      cancelled = true;
+      socket.off("order:update", onOrderUpdate);
+    };
+  }, []);
+
+  const handleOrderStatus = async (orderId, status) => {
+    setOrderActionId(orderId);
+    setOrdersError("");
+    try {
+      await updateOrderStatus(orderId, status);
+    } catch (e) {
+      setOrdersError(e.message || "Order update failed");
+    } finally {
+      setOrderActionId(null);
+    }
+  };
 
   const applyStatus = async (next) => {
     setSaving(true);
@@ -95,6 +158,53 @@ function RestaurantDashboard() {
           disabled={false}
         />
       </div>
+
+      <section style={{ marginTop: "1.5rem" }}>
+        <h2 className={styles.title} style={{ fontSize: "1.125rem" }}>
+          Orders
+        </h2>
+        {ordersLoading ? <p className={styles.hint}>Loading orders…</p> : null}
+        {ordersError ? <div className={styles.error}>{ordersError}</div> : null}
+        {!ordersLoading && orders.length === 0 ? <p className={styles.hint}>No orders yet.</p> : null}
+        <ul style={{ listStyle: "none", padding: 0 }}>
+          {orders.map((order) => (
+            <li key={order._id} style={{ marginBottom: "0.75rem" }}>
+              <span>
+                Order {String(order._id).slice(-6)} — {order.status} — ${order.totalAmount?.toFixed(2)}
+              </span>
+              <div className={styles.actions} style={{ marginTop: "0.25rem" }}>
+                {order.status === "PLACED" ? (
+                  <button
+                    type="button"
+                    disabled={orderActionId === order._id}
+                    onClick={() => handleOrderStatus(order._id, "ACCEPTED")}
+                  >
+                    Accept
+                  </button>
+                ) : null}
+                {order.status === "ACCEPTED" ? (
+                  <button
+                    type="button"
+                    disabled={orderActionId === order._id}
+                    onClick={() => handleOrderStatus(order._id, "PREPARING")}
+                  >
+                    Preparing
+                  </button>
+                ) : null}
+                {["PLACED", "ACCEPTED", "PREPARING"].includes(order.status) ? (
+                  <button
+                    type="button"
+                    disabled={orderActionId === order._id}
+                    onClick={() => handleOrderStatus(order._id, "CANCELLED")}
+                  >
+                    Cancel
+                  </button>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section id="status">
         <h2 className={styles.title} style={{ fontSize: "1.125rem" }}>

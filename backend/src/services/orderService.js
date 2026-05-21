@@ -3,6 +3,7 @@ const Order = require("../models/Order");
 const { ORDER_STATUSES } = require("../models/Order");
 const MenuItem = require("../models/MenuItem");
 const RestaurantProfile = require("../models/RestaurantProfile");
+const { emitOrderUpdate } = require("../../socket");
 
 const createError = (message, statusCode) => {
   const error = new Error(message);
@@ -127,7 +128,9 @@ const createOrder = async (customer, payload) => {
     status: "PLACED",
   });
 
-  return Order.findById(order._id).lean();
+  const saved = await Order.findById(order._id).lean();
+  emitOrderUpdate(saved);
+  return saved;
 };
 
 const getOrderById = async (user, orderId) => {
@@ -152,7 +155,11 @@ const getOrdersForRestaurant = async (restaurantId) => {
 };
 
 const getOrdersForDriver = async (driverId) => {
-  return Order.find({ driverId }).sort({ createdAt: -1 }).lean();
+  return Order.find({
+    $or: [{ driverId }, { status: "PREPARING", driverId: null }],
+  })
+    .sort({ createdAt: -1 })
+    .lean();
 };
 
 const updateOrderStatus = async (actor, orderId, newStatus) => {
@@ -217,8 +224,9 @@ const updateOrderStatus = async (actor, orderId, newStatus) => {
   order.status = newStatus;
   await order.save();
 
-  // Socket.io: emit order status change here in a later phase
-  return order.toObject();
+  const updated = order.toObject();
+  emitOrderUpdate(updated);
+  return updated;
 };
 
 module.exports = {
