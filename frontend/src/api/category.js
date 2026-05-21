@@ -6,7 +6,7 @@ const authHeader = () => {
 };
 
 export const getCategories = async () => {
-  const response = await fetch(`${getApiBase()}/category/`, {
+  const response = await fetch(`${getApiBase()}/api/category/`, {
     method: "GET",
     headers: {
       ...authHeader(),
@@ -20,7 +20,7 @@ export const getCategories = async () => {
 };
 
 export const createCategory = async (data) => {
-  const response = await fetch(`${getApiBase()}/category/`, {
+  const response = await fetch(`${getApiBase()}/api/category/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -36,7 +36,7 @@ export const createCategory = async (data) => {
 };
 
 export const deleteCategory = async (id) => {
-  const response = await fetch(`${getApiBase()}/category/${id}`, {
+  const response = await fetch(`${getApiBase()}/api/category/${id}`, {
     method: "DELETE",
     headers: {
       ...authHeader(),

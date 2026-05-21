@@ -7,7 +7,7 @@ const authHeader = () => {
 };
 
 const getProfile = async () => {
-  const response = await fetch(`${getApiBase()}/profile`, {
+  const response = await fetch(`${getApiBase()}/api/customer`, {
     method: "GET",
     headers: {
       ...authHeader(),
@@ -24,7 +24,7 @@ const getProfile = async () => {
 };
 
 const completeCustomerProfile = async (data) => {
-  const response = await fetch(`${getApiBase()}/profile/complete`, {
+  const response = await fetch(`${getApiBase()}/api/customer/complete`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -40,7 +40,7 @@ const completeCustomerProfile = async (data) => {
 };
 
 const completeDriverProfile = async (data) => {
-  const response = await fetch(`${getApiBase()}/profile/complete`, {
+  const response = await fetch(`${getApiBase()}/api/customer/complete`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -56,7 +56,7 @@ const completeDriverProfile = async (data) => {
 };
 
 const completeRestaurantProfile = async (data) => {
-  const response = await fetch(`${getApiBase()}/profile/complete`, {
+  const response = await fetch(`${getApiBase()}/api/customer/complete`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -72,7 +72,7 @@ const completeRestaurantProfile = async (data) => {
 };
 
 const deleteProfile = async () => {
-  const response = await fetch(`${getApiBase()}/profile`, {
+  const response = await fetch(`${getApiBase()}/api/customer`, {
     method: "DELETE",
     headers: {
       ...authHeader(),
@@ -86,7 +86,7 @@ const deleteProfile = async () => {
 };
 
 const updatePassword = async ({ currentPassword, newPassword, confirmPassword }) => {
-  const response = await fetch(`${getApiBase()}/profile/password`, {
+  const response = await fetch(`${getApiBase()}/api/customer/password`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

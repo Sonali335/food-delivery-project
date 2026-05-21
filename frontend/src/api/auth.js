@@ -1,7 +1,7 @@
 import { getApiBase } from "./config";
 
 const signup = async ({ email, password, role }) => {
-  const response = await fetch(`${getApiBase()}/auth/signup`, {
+  const response = await fetch(`${getApiBase()}/api/auth/signup`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -16,7 +16,7 @@ const signup = async ({ email, password, role }) => {
 };
 
 const verifyOtp = async ({ email, otp }) => {
-  const response = await fetch(`${getApiBase()}/auth/verify-otp`, {
+  const response = await fetch(`${getApiBase()}/api/auth/verify-otp`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -31,7 +31,7 @@ const verifyOtp = async ({ email, otp }) => {
 };
 
 const login = async ({ email, password }) => {
-  const response = await fetch(`${getApiBase()}/auth/login`, {
+  const response = await fetch(`${getApiBase()}/api/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -50,7 +50,7 @@ const googleLogin = async ({ idToken, role }) => {
   if (role) {
     body.role = role;
   }
-  const response = await fetch(`${getApiBase()}/auth/google`, {
+  const response = await fetch(`${getApiBase()}/api/auth/google`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -65,7 +65,7 @@ const googleLogin = async ({ idToken, role }) => {
 };
 
 const requestPasswordReset = async ({ email }) => {
-  const response = await fetch(`${getApiBase()}/auth/forgot-password`, {
+  const response = await fetch(`${getApiBase()}/api/auth/forgot-password`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -80,7 +80,7 @@ const requestPasswordReset = async ({ email }) => {
 };
 
 const resetPasswordWithOtp = async ({ email, otp, newPassword }) => {
-  const response = await fetch(`${getApiBase()}/auth/reset-password`, {
+  const response = await fetch(`${getApiBase()}/api/auth/reset-password`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

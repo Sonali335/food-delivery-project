@@ -13,7 +13,7 @@
 | Document | Scope |
 | -------- | ----- |
 | [`API.md`](API.md) (this file) | Health, auth, profile |
-| [`restaurant.md`](restaurant.md) | Menu, categories, restaurant status (`/menu`, `/category`, `/restaurant`) |
+| [`restaurant.md`](restaurant.md) | Menu, categories, restaurant status (`/api/menu`, `/api/category`, `/api/restaurant`) |
 | [`driver.md`](driver.md) | Driver location (`/api/driver`) |
 | [`orders.md`](orders.md) | Order lifecycle (`/api/orders`) |
 
@@ -21,10 +21,11 @@
 
 | Prefix | Role / purpose |
 | ------ | -------------- |
-| `/auth` | Signup, login, OTP, password reset |
-| `/profile` | Profile CRUD for all roles |
-| `/menu`, `/category`, `/restaurant` | Restaurant menu and status |
-| `/api/driver` | Driver-specific APIs (location) |
+| `/api/auth` | Signup, login, OTP, password reset |
+| `/api/customer` | Profile CRUD for all roles |
+| `/api/restaurant` | Restaurant operational status |
+| `/api/menu`, `/api/category` | Restaurant menu and categories |
+| `/api/driver` | Driver location |
 | `/api/orders` | Order lifecycle (create, list, status updates) |
 
 **Default JSON rules**
@@ -46,7 +47,7 @@
 Authorization: Bearer <JWT>
 ```
 
-JWT is issued by **`POST /auth/login`** and **`POST /auth/google`** (same token shape). **`POST /auth/signup`** does **not** return a JWT; the client must verify email with OTP, then log in.
+JWT is issued by **`POST /api/auth/login`** and **`POST /api/auth/google`** (same token shape). **`POST /api/auth/signup`** does **not** return a JWT; the client must verify email with OTP, then log in.
 
 Payload claims (signed with `process.env.JWT_SECRET`, expires in **7 days**):
 
@@ -55,7 +56,7 @@ Payload claims (signed with `process.env.JWT_SECRET`, expires in **7 days**):
 
 **User model (auth-related):** `password` may be `null` for Google-created accounts. Email/password users have a bcrypt-hashed `password`.
 
-**Password policy** (enforced on **`POST /auth/signup`**, **`POST /auth/reset-password`**, and **`POST /profile/password`**):
+**Password policy** (enforced on **`POST /api/auth/signup`**, **`POST /api/auth/reset-password`**, and **`POST /api/customer/password`**):
 
 - At least **8** characters  
 - At least **one digit** (`0–9`)  
@@ -84,15 +85,15 @@ API is running...
 
 ---
 
-## Authentication (`/auth`)
+## Authentication (`/api/auth`)
 
-Mounted in `backend/src/server.js` as `/auth` + router paths below.
+Mounted in `backend/src/server.js` as `/api/auth` + router paths below.
 
 ---
 
-### POST `/auth/signup`
+### POST `/api/auth/signup`
 
-**Full path:** `http://localhost:5000/auth/signup`
+**Full path:** `http://localhost:5000/api/auth/signup`
 
 **Description:** Does **not** create a `User` yet. Validates the password policy, checks the email is not already registered as a **User**, then **upserts** a **`PendingSignup`** row (email, bcrypt-hashed password, role, bcrypt-hashed **6-digit OTP**, `expiresAt` **10 minutes** from creation). Sends the plain OTP by email when SMTP is configured (otherwise the server logs a dev fallback). **No JWT** is returned.
 
@@ -140,13 +141,13 @@ Mounted in `backend/src/server.js` as `/auth` + router paths below.
 
 ---
 
-### POST `/auth/verify-otp`
+### POST `/api/auth/verify-otp`
 
-**Full path:** `http://localhost:5000/auth/verify-otp`
+**Full path:** `http://localhost:5000/api/auth/verify-otp`
 
 **Description:**  
 
-1. **Primary flow:** If a **`PendingSignup`** exists for the email, validates the OTP and expiry. On success: creates **`User`** with `isVerified: true`, `accountStatus: "active"`, deletes the pending row. **Does not issue a JWT** — the client should call **`POST /auth/login`** afterward.  
+1. **Primary flow:** If a **`PendingSignup`** exists for the email, validates the OTP and expiry. On success: creates **`User`** with `isVerified: true`, `accountStatus: "active"`, deletes the pending row. **Does not issue a JWT** — the client should call **`POST /api/auth/login`** afterward.  
 
 2. **Legacy flow:** If no `PendingSignup` but a **`User`** exists with a signup **`OtpVerification`** record (`purpose` `signup` or legacy docs without `purpose`), the previous verify behavior still applies (activate user, clear signup OTPs).
 
@@ -177,9 +178,9 @@ Mounted in `backend/src/server.js` as `/auth` + router paths below.
 
 ---
 
-### POST `/auth/login`
+### POST `/api/auth/login`
 
-**Full path:** `http://localhost:5000/auth/login`
+**Full path:** `http://localhost:5000/api/auth/login`
 
 **Description:** Validates email/password. Requires **`isVerified === true`** and **`accountStatus === "active"`**. Returns a JWT plus a password-free user snapshot.
 
@@ -233,9 +234,9 @@ Mounted in `backend/src/server.js` as `/auth` + router paths below.
 
 ---
 
-### POST `/auth/google`
+### POST `/api/auth/google`
 
-**Full path:** `http://localhost:5000/auth/google`
+**Full path:** `http://localhost:5000/api/auth/google`
 
 **Description:** Verifies a **Google ID token** (`google-auth-library`), finds or creates the user by email, ensures the account is not **suspended**, and returns a JWT. New Google users are created as **`customer`**, **`isVerified: true`**, **`accountStatus: "active"`**, with a basic **CustomerProfile** (no OTP). Any **`PendingSignup`** for the same email is removed so it does not block Google sign-in. Existing users with `pending` / unverified state are upgraded to verified + active.
 
@@ -269,9 +270,9 @@ Mounted in `backend/src/server.js` as `/auth` + router paths below.
 
 ---
 
-### POST `/auth/forgot-password`
+### POST `/api/auth/forgot-password`
 
-**Full path:** `http://localhost:5000/auth/forgot-password`
+**Full path:** `http://localhost:5000/api/auth/forgot-password`
 
 **Description:** If a **User** exists for the email, has a **password** (not Google-only), and is **not suspended**, deletes prior **password-reset** OTP rows, creates a new **6-digit OTP** in **`OtpVerification`** (`purpose: "password_reset"`, **10 minute** expiry), and emails the code when SMTP is configured. Response message is always the same generic text (does not reveal whether the email exists).
 
@@ -312,9 +313,9 @@ When no email was sent (unknown email, Google-only account, suspended, etc.):
 
 ---
 
-### POST `/auth/reset-password`
+### POST `/api/auth/reset-password`
 
-**Full path:** `http://localhost:5000/auth/reset-password`
+**Full path:** `http://localhost:5000/api/auth/reset-password`
 
 **Description:** Validates the latest **password_reset** OTP for the user, checks expiry, enforces the **password policy** on `newPassword`, updates the user’s bcrypt password, sets **`isVerified: true`** and **`accountStatus: "active"`** if they were still pending, and clears password-reset and signup OTP rows for that user.
 
@@ -346,15 +347,15 @@ When no email was sent (unknown email, Google-only account, suspended, etc.):
 
 ---
 
-## Profile (`/profile`)
+## Customer profile (`/api/customer`)
 
-Mounted in `backend/src/server.js` as `/profile` + router paths below.
+Mounted in `backend/src/server.js` as `/api/customer` + router paths below. Used by customers, drivers, and restaurants for profile CRUD.
 
 ---
 
-### GET `/profile`
+### GET `/api/customer`
 
-**Full path:** `http://localhost:5000/profile`
+**Full path:** `http://localhost:5000/api/customer`
 
 **Description:** Returns the profile document for the authenticated user’s role (`CustomerProfile`, `DriverProfile`, or `RestaurantProfile`).
 
@@ -379,9 +380,9 @@ Mounted in `backend/src/server.js` as `/profile` + router paths below.
 
 ---
 
-### POST `/profile/complete`
+### POST `/api/customer/complete`
 
-**Full path:** `http://localhost:5000/profile/complete`
+**Full path:** `http://localhost:5000/api/customer/complete`
 
 **Description:** Upserts (`findOneAndUpdate` with upsert) the profile document matching the authenticated user’s `role`.  
 **Protected:** Requires `Authorization: Bearer <JWT>`.
@@ -594,9 +595,9 @@ Mongoose address field validation failures may surface as **500** depending on m
 
 ---
 
-### POST `/profile/password`
+### POST `/api/customer/password`
 
-**Full path:** `http://localhost:5000/profile/password`
+**Full path:** `http://localhost:5000/api/customer/password`
 
 **Description:** Updates the authenticated user’s password. If the user already has a password, **current password** must be correct. If `password` is `null` (e.g. Google-only), **current password** is not required — the user can set a password for the first time. **`newPassword`** must satisfy the global **password policy** (8+ chars, one number, one symbol).
 
@@ -631,9 +632,9 @@ Mongoose address field validation failures may surface as **500** depending on m
 
 ---
 
-### DELETE `/profile`
+### DELETE `/api/customer`
 
-**Full path:** `http://localhost:5000/profile`
+**Full path:** `http://localhost:5000/api/customer`
 
 **Description:** Deletes the user’s role-specific profile document, all **`OtpVerification`** rows for that user, any **`PendingSignup`** row for the user’s email, and the **User** document (full account removal).
 
@@ -658,27 +659,27 @@ Mongoose address field validation failures may surface as **500** depending on m
 | Method   | Exact path                                      | Auth | Purpose |
 |----------|-------------------------------------------------|------|---------|
 | `GET`    | `http://localhost:5000/`                        | none | Health (plain text) |
-| `POST`   | `http://localhost:5000/auth/signup`           | none | Start email signup (`PendingSignup` + OTP email) |
-| `POST`   | `http://localhost:5000/auth/verify-otp`         | none | Verify signup OTP → create `User` |
-| `POST`   | `http://localhost:5000/auth/login`              | none | Login + JWT |
-| `POST`   | `http://localhost:5000/auth/google`             | none | Google ID token → JWT |
-| `POST`   | `http://localhost:5000/auth/forgot-password`  | none | Request password-reset OTP (generic response) |
-| `POST`   | `http://localhost:5000/auth/reset-password`   | none | Submit reset OTP + new password |
-| `GET`    | `http://localhost:5000/profile`                 | Bearer JWT | Get profile by role |
-| `POST`   | `http://localhost:5000/profile/complete`      | Bearer JWT | Upsert profile by role |
-| `POST`   | `http://localhost:5000/profile/password`      | Bearer JWT | Update password |
-| `DELETE` | `http://localhost:5000/profile`                 | Bearer JWT | Delete profile + pending signup + user account |
+| `POST`   | `http://localhost:5000/api/auth/signup`           | none | Start email signup (`PendingSignup` + OTP email) |
+| `POST`   | `http://localhost:5000/api/auth/verify-otp`         | none | Verify signup OTP → create `User` |
+| `POST`   | `http://localhost:5000/api/auth/login`              | none | Login + JWT |
+| `POST`   | `http://localhost:5000/api/auth/google`             | none | Google ID token → JWT |
+| `POST`   | `http://localhost:5000/api/auth/forgot-password`  | none | Request password-reset OTP (generic response) |
+| `POST`   | `http://localhost:5000/api/auth/reset-password`   | none | Submit reset OTP + new password |
+| `GET`    | `http://localhost:5000/api/customer`                 | Bearer JWT | Get profile by role |
+| `POST`   | `http://localhost:5000/api/customer/complete`      | Bearer JWT | Upsert profile by role |
+| `POST`   | `http://localhost:5000/api/customer/password`      | Bearer JWT | Update password |
+| `DELETE` | `http://localhost:5000/api/customer`                 | Bearer JWT | Delete profile + pending signup + user account |
 
 ### Restaurant (`restaurant.md`)
 
 | Method   | Path | Auth | Purpose |
 |----------|------|------|---------|
-| `GET` / `PATCH` | `/restaurant/status` | Bearer JWT, role `restaurant` | Read / update operational status |
-| `POST` / `GET` | `/category/` | Bearer JWT, role `restaurant` | Create / list categories |
-| `DELETE` | `/category/:id` | Bearer JWT, role `restaurant` | Delete category |
-| `POST` / `GET` | `/menu/` | Bearer JWT, role `restaurant` | Create / list menu items |
-| `GET` / `PATCH` / `DELETE` | `/menu/:id` | Bearer JWT, role `restaurant` | Read / update / delete menu item |
-| `POST` | `/menu/upload-image` | Bearer JWT, role `restaurant` | Upload menu image (Cloudinary) |
+| `GET` / `PATCH` | `/api/restaurant/status` | Bearer JWT, role `restaurant` | Read / update operational status |
+| `POST` / `GET` | `/api/category/` | Bearer JWT, role `restaurant` | Create / list categories |
+| `DELETE` | `/api/category/:id` | Bearer JWT, role `restaurant` | Delete category |
+| `POST` / `GET` | `/api/menu/` | Bearer JWT, role `restaurant` | Create / list menu items |
+| `GET` / `PATCH` / `DELETE` | `/api/menu/:id` | Bearer JWT, role `restaurant` | Read / update / delete menu item |
+| `POST` | `/api/menu/upload-image` | Bearer JWT, role `restaurant` | Upload menu image (Cloudinary) |
 
 ### Driver (`driver.md`)
 
@@ -708,7 +709,7 @@ Mongoose address field validation failures may surface as **500** depending on m
 
 **Google Sign-In**
 
-- **`GOOGLE_CLIENT_ID`** — OAuth 2.0 Web client ID; required for `POST /auth/google` (`authService.googleLogin`).
+- **`GOOGLE_CLIENT_ID`** — OAuth 2.0 Web client ID; required for `POST /api/auth/google` (`authService.googleLogin`).
 
 **Email (OTP signup, password reset)**
 

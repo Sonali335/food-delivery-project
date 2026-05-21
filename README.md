@@ -26,9 +26,10 @@ A web application for food delivery that connects **customers**, **drivers**, an
 
 | Prefix | Used by |
 | ------ | ------- |
-| `/auth` | All users (signup, login, OTP, password reset) |
-| `/profile` | All roles (profile CRUD) |
-| `/menu`, `/category`, `/restaurant` | Restaurants |
+| `/api/auth` | All users (signup, login, OTP, password reset) |
+| `/api/customer` | All roles (profile CRUD) |
+| `/api/restaurant` | Restaurant status |
+| `/api/menu`, `/api/category` | Restaurant menu & categories |
 | `/api/driver` | Drivers (live location) |
 | `/api/orders` | Orders (create, list, status lifecycle) |
 
@@ -53,7 +54,7 @@ food-delivery-project/
 ├── backend/
 │   ├── doc/           # API documentation
 │   └── src/
-│       ├── routes/    # auth, profile, menu, category, restaurant, driver
+│       ├── routes/    # auth, customer, menu, category, restaurant, driver, orders
 │       ├── controllers/
 │       ├── models/
 │       └── services/
@@ -80,6 +81,6 @@ npm install
 npm run dev
 ```
 
-Vite proxies `/auth`, `/profile`, `/menu`, `/category`, `/restaurant`, and `/api` to the backend (default `http://localhost:5000`).
+Vite proxies `/api` to the backend (default `http://localhost:5000`). All API calls use paths under `/api/...`.
 
 Optional: set `VITE_API_BASE_URL` in the frontend for production builds pointing at your deployed API.

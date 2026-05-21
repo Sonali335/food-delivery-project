@@ -6,7 +6,7 @@ const authHeader = () => {
 };
 
 export const getStatus = async () => {
-  const response = await fetch(`${getApiBase()}/restaurant/status`, {
+  const response = await fetch(`${getApiBase()}/api/restaurant/status`, {
     method: "GET",
     headers: {
       ...authHeader(),
@@ -20,7 +20,7 @@ export const getStatus = async () => {
 };
 
 export const updateStatus = async (status) => {
-  const response = await fetch(`${getApiBase()}/restaurant/status`, {
+  const response = await fetch(`${getApiBase()}/api/restaurant/status`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",

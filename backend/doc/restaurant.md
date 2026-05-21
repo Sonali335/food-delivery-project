@@ -1,6 +1,6 @@
 # Restaurant APIs
 
-These endpoints support **restaurant menu management** and **restaurant status**. They are mounted at `/menu`, `/category`, and `/restaurant` in `server.js`.
+These endpoints support **restaurant menu management** and **restaurant status**. They are mounted at `/api/menu`, `/api/category`, and `/api/restaurant` in `server.js`.
 
 **See also:** [`API.md`](API.md) (auth & profile), [`driver.md`](driver.md) (driver location).
 
@@ -23,9 +23,9 @@ Assume the API host is `http://localhost:5000` (or your deployed host). Paths ar
 
 | Area        | Base path        |
 | ----------- | ---------------- |
-| Menu        | `/menu`      |
-| Categories  | `/category`  |
-| Status      | `/restaurant`|
+| Menu        | `/api/menu`      |
+| Categories  | `/api/category`  |
+| Status      | `/api/restaurant`|
 
 ---
 
@@ -33,7 +33,7 @@ Assume the API host is `http://localhost:5000` (or your deployed host). Paths ar
 
 Backed by the **`RestaurantProfile`** document for the logged-in user (`status`: `open` | `closed` | `busy`).
 
-### `GET /restaurant/status`
+### `GET /api/restaurant/status`
 
 Returns the current operational status.
 
@@ -47,7 +47,7 @@ Returns the current operational status.
 
 ---
 
-### `PATCH /restaurant/status`
+### `PATCH /api/restaurant/status`
 
 Updates operational status.
 
@@ -73,7 +73,7 @@ Allowed values: `"open"`, `"closed"`, `"busy"`.
 
 Categories belong to the restaurant (`restaurantId` = authenticated user `_id`).
 
-### `POST /category/`
+### `POST /api/category/`
 
 Creates a category. Duplicate names (case-insensitive, same restaurant) return **409**.
 
@@ -93,7 +93,7 @@ Creates a category. Duplicate names (case-insensitive, same restaurant) return *
 
 ---
 
-### `GET /category/`
+### `GET /api/category/`
 
 Lists all categories for this restaurant, oldest first.
 
@@ -105,7 +105,7 @@ Lists all categories for this restaurant, oldest first.
 
 ---
 
-### `DELETE /category/:id`
+### `DELETE /api/category/:id`
 
 Deletes a category by MongoDB `_id`.
 
@@ -123,7 +123,7 @@ Deletes a category by MongoDB `_id`.
 
 Menu items reference **`categoryId`**; the category must belong to the same restaurant.
 
-### `POST /menu/`
+### `POST /api/menu/`
 
 Creates a menu item.
 
@@ -148,7 +148,7 @@ Creates a menu item.
 
 ---
 
-### `GET /menu/`
+### `GET /api/menu/`
 
 Lists all menu items for this restaurant (newest first). Each item’s `categoryId` is **populated** with `{ _id, name }` for display.
 
@@ -160,7 +160,7 @@ Lists all menu items for this restaurant (newest first). Each item’s `category
 
 ---
 
-### `GET /menu/:id`
+### `GET /api/menu/:id`
 
 Returns one menu item if it belongs to this restaurant.
 
@@ -174,7 +174,7 @@ Returns one menu item if it belongs to this restaurant.
 
 ---
 
-### `PATCH /menu/:id`
+### `PATCH /api/menu/:id`
 
 Partial update. Include only fields to change.
 
@@ -199,7 +199,7 @@ Partial update. Include only fields to change.
 
 ---
 
-### `DELETE /menu/:id`
+### `DELETE /api/menu/:id`
 
 Deletes a menu item owned by this restaurant.
 
@@ -213,7 +213,7 @@ Deletes a menu item owned by this restaurant.
 
 ---
 
-### `POST /menu/upload-image`
+### `POST /api/menu/upload-image`
 
 Uploads an image to **Cloudinary** (server-side). Requires env vars: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
 

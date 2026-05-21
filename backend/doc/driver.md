@@ -1,6 +1,6 @@
 # Driver APIs
 
-These endpoints support **driver live location** updates. Driver profile read/write (except location) uses the shared **`/profile`** routes documented in [`API.md`](API.md).
+These endpoints support **driver live location** updates. Driver profile read/write (except location) uses the shared **`/api/customer`** routes documented in [`API.md`](API.md).
 
 Mounted in `server.js` at **`/api/driver`**.
 
@@ -91,12 +91,12 @@ Drivers use the same profile endpoints as other roles (see [`API.md`](API.md)):
 
 | Method | Path | Purpose |
 | ------ | ---- | ------- |
-| `GET` | `/profile` | Returns `DriverProfile` for the logged-in driver |
-| `POST` | `/profile/complete` | Upsert driver profile (username, phone, vehicle fields) |
-| `POST` | `/profile/password` | Update password |
-| `DELETE` | `/profile` | Delete profile and account |
+| `GET` | `/api/customer` | Returns `DriverProfile` for the logged-in driver |
+| `POST` | `/api/customer/complete` | Upsert driver profile (username, phone, vehicle fields) |
+| `POST` | `/api/customer/password` | Update password |
+| `DELETE` | `/api/customer` | Delete profile and account |
 
-`GET /profile` returns:
+`GET /api/customer` returns:
 
 ```json
 { "profile": { ... } }

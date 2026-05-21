@@ -6,7 +6,7 @@ const authHeader = () => {
 };
 
 export const getMenuItems = async () => {
-  const response = await fetch(`${getApiBase()}/menu/`, {
+  const response = await fetch(`${getApiBase()}/api/menu/`, {
     method: "GET",
     headers: {
       ...authHeader(),
@@ -20,7 +20,7 @@ export const getMenuItems = async () => {
 };
 
 export const getMenuItem = async (id) => {
-  const response = await fetch(`${getApiBase()}/menu/${id}`, {
+  const response = await fetch(`${getApiBase()}/api/menu/${id}`, {
     method: "GET",
     headers: {
       ...authHeader(),
@@ -34,7 +34,7 @@ export const getMenuItem = async (id) => {
 };
 
 export const createMenuItem = async (data) => {
-  const response = await fetch(`${getApiBase()}/menu/`, {
+  const response = await fetch(`${getApiBase()}/api/menu/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -50,7 +50,7 @@ export const createMenuItem = async (data) => {
 };
 
 export const updateMenuItem = async (id, data) => {
-  const response = await fetch(`${getApiBase()}/menu/${id}`, {
+  const response = await fetch(`${getApiBase()}/api/menu/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -66,7 +66,7 @@ export const updateMenuItem = async (id, data) => {
 };
 
 export const deleteMenuItem = async (id) => {
-  const response = await fetch(`${getApiBase()}/menu/${id}`, {
+  const response = await fetch(`${getApiBase()}/api/menu/${id}`, {
     method: "DELETE",
     headers: {
       ...authHeader(),
@@ -83,7 +83,7 @@ export const uploadMenuImage = async (file) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${getApiBase()}/menu/upload-image`, {
+  const response = await fetch(`${getApiBase()}/api/menu/upload-image`, {
     method: "POST",
     headers: {
       ...authHeader(),
