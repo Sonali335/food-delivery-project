@@ -1,13 +1,78 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getStatus, updateStatus } from "../api/restaurant";
 import { getRestaurantOrders, updateOrderStatus } from "../api/orders";
+import { getProfile } from "../api/profile";
 import { connectSocket } from "../socket";
-import Button from "../components/Button";
-import styles from "./pages.module.css";
+import RestaurantShell from "../components/restaurant/RestaurantShell";
+
+const ACTIVE_STATUSES = ["PLACED", "ACCEPTED", "PREPARING"];
+
+const AVATAR_COLORS = [
+  { bg: "#d1fae5", text: "#047857" },
+  { bg: "#dbeafe", text: "#1d4ed8" },
+  { bg: "#f3e8ff", text: "#7c3aed" },
+  { bg: "#ffedd5", text: "#c2410c" },
+];
+
+function isToday(iso) {
+  if (!iso) return false;
+  const d = new Date(iso);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
+
+function formatItems(items) {
+  if (!Array.isArray(items) || items.length === 0) return "—";
+  return items.map((line) => `${line.quantity}x ${line.name}`).join(", ");
+}
+
+function customerLabel(customerId) {
+  const id = String(customerId || "");
+  return `Customer ${id.slice(-4).toUpperCase()}`;
+}
+
+function customerInitials(customerId) {
+  const id = String(customerId || "??");
+  return id.slice(-2).toUpperCase();
+}
+
+function avatarColor(customerId) {
+  const id = String(customerId || "");
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) hash = (hash + id.charCodeAt(i)) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[hash];
+}
+
+function statusBadgeClass(status) {
+  const key = (status || "").toLowerCase().replace(/-/g, "_");
+  return `rd-badge rd-badge-${key}`;
+}
+
+function statusLabel(status) {
+  if (!status) return "—";
+  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function computeStats(orders) {
+  const todayOrders = orders.filter((o) => isToday(o.createdAt));
+  const todayRevenue = todayOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+  const activeCount = orders.filter((o) => ACTIVE_STATUSES.includes(o.status)).length;
+  return {
+    todayCount: todayOrders.length,
+    todayRevenue,
+    activeCount,
+    totalCount: orders.length,
+  };
+}
 
 function RestaurantDashboard() {
   const navigate = useNavigate();
+  const [restaurantName, setRestaurantName] = useState("");
   const [status, setStatus] = useState("open");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -22,8 +87,14 @@ function RestaurantDashboard() {
     (async () => {
       setError("");
       try {
-        const data = await getStatus();
-        if (!cancelled) setStatus(data.status || "open");
+        const [statusRes, profileRes] = await Promise.all([
+          getStatus(),
+          getProfile().catch(() => ({ profile: null })),
+        ]);
+        if (!cancelled) {
+          setStatus(statusRes.status || "open");
+          setRestaurantName(profileRes.profile?.restaurantName || "");
+        }
       } catch (e) {
         if (!cancelled) setError(e.message || "Failed to load status");
       } finally {
@@ -53,9 +124,11 @@ function RestaurantDashboard() {
     loadOrders();
 
     const socket = connectSocket();
-    if (!socket) return () => {
-      cancelled = true;
-    };
+    if (!socket) {
+      return () => {
+        cancelled = true;
+      };
+    }
 
     const onOrderUpdate = (payload) => {
       setOrders((prev) => {
@@ -80,11 +153,14 @@ function RestaurantDashboard() {
     };
   }, []);
 
-  const handleOrderStatus = async (orderId, status) => {
+  const stats = useMemo(() => computeStats(orders), [orders]);
+  const recentOrders = useMemo(() => orders.slice(0, 10), [orders]);
+
+  const handleOrderStatus = async (orderId, nextStatus) => {
     setOrderActionId(orderId);
     setOrdersError("");
     try {
-      await updateOrderStatus(orderId, status);
+      await updateOrderStatus(orderId, nextStatus);
     } catch (e) {
       setOrdersError(e.message || "Order update failed");
     } finally {
@@ -105,125 +181,200 @@ function RestaurantDashboard() {
     }
   };
 
-  const normalizedStatus = (status || "open").toLowerCase();
-  const statusLabel =
-    normalizedStatus === "open" || normalizedStatus === "closed" || normalizedStatus === "busy"
-      ? normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1)
-      : "Open";
-
-  const badgeStyle = (() => {
-    const base = {
-      display: "inline-block",
-      marginTop: "0.5rem",
-      marginBottom: "0.25rem",
-      padding: "0.35rem 0.65rem",
-      borderRadius: "6px",
-      fontSize: "0.875rem",
-      fontWeight: 600,
-    };
-    if (normalizedStatus === "open") {
-      return { ...base, backgroundColor: "#d1fae5", color: "#065f46" };
-    }
-    if (normalizedStatus === "closed") {
-      return { ...base, backgroundColor: "#fee2e2", color: "#991b1b" };
-    }
-    if (normalizedStatus === "busy") {
-      return { ...base, backgroundColor: "#fef9c3", color: "#854d0e" };
-    }
-    return { ...base, backgroundColor: "#d1fae5", color: "#065f46" };
-  })();
+  const welcomeName = restaurantName || "your restaurant";
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Restaurant dashboard</h1>
-      {loading ? (
-        <span className={styles.hint} style={{ display: "inline-block", marginTop: "0.5rem" }}>
-          Loading status…
-        </span>
-      ) : (
-        <span style={badgeStyle}>Status: {statusLabel}</span>
-      )}
-      {error ? <div className={styles.error}>{error}</div> : null}
-
-      <div className={styles.actions} style={{ marginTop: "1.25rem", marginBottom: "1.5rem" }}>
-        <Button text="Manage menu" onClick={() => navigate("/restaurant/menu")} disabled={false} />
-        <Button
-          text="Manage categories"
-          onClick={() => navigate("/restaurant/categories")}
-          disabled={false}
-        />
-        <Button
-          text="Change status"
-          onClick={() => document.getElementById("status")?.scrollIntoView({ behavior: "smooth" })}
-          disabled={false}
-        />
-      </div>
-
-      <section style={{ marginTop: "1.5rem" }}>
-        <h2 className={styles.title} style={{ fontSize: "1.125rem" }}>
-          Orders
-        </h2>
-        {ordersLoading ? <p className={styles.hint}>Loading orders…</p> : null}
-        {ordersError ? <div className={styles.error}>{ordersError}</div> : null}
-        {!ordersLoading && orders.length === 0 ? <p className={styles.hint}>No orders yet.</p> : null}
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {orders.map((order) => (
-            <li key={order._id} style={{ marginBottom: "0.75rem" }}>
-              <span>
-                Order {String(order._id).slice(-6)} — {order.status} — ${order.totalAmount?.toFixed(2)}
-              </span>
-              <div className={styles.actions} style={{ marginTop: "0.25rem" }}>
-                {order.status === "PLACED" ? (
-                  <button
-                    type="button"
-                    disabled={orderActionId === order._id}
-                    onClick={() => handleOrderStatus(order._id, "ACCEPTED")}
-                  >
-                    Accept
-                  </button>
-                ) : null}
-                {order.status === "ACCEPTED" ? (
-                  <button
-                    type="button"
-                    disabled={orderActionId === order._id}
-                    onClick={() => handleOrderStatus(order._id, "PREPARING")}
-                  >
-                    Preparing
-                  </button>
-                ) : null}
-                {["PLACED", "ACCEPTED", "PREPARING"].includes(order.status) ? (
-                  <button
-                    type="button"
-                    disabled={orderActionId === order._id}
-                    onClick={() => handleOrderStatus(order._id, "CANCELLED")}
-                  >
-                    Cancel
-                  </button>
-                ) : null}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section id="status">
-        <h2 className={styles.title} style={{ fontSize: "1.125rem" }}>
-          Change status
-        </h2>
-        <p className={styles.hint}>Set whether you are accepting orders.</p>
-        <div className={styles.actions}>
-          <button type="button" disabled={saving || loading} onClick={() => applyStatus("open")}>
-            Open
-          </button>
-          <button type="button" disabled={saving || loading} onClick={() => applyStatus("closed")}>
-            Closed
-          </button>
-          <button type="button" disabled={saving || loading} onClick={() => applyStatus("busy")}>
-            Busy
+    <RestaurantShell
+      restaurantName={restaurantName}
+      status={status}
+      statusLoading={loading}
+      statusSaving={saving}
+      onSetStatus={applyStatus}
+    >
+      <div className="rd-page-header">
+        <div>
+          <h1 className="rd-page-title">Dashboard overview</h1>
+          <p className="rd-page-subtitle">
+            Welcome back, {welcomeName}. Here&apos;s what&apos;s happening today.
+          </p>
+        </div>
+        <div className="rd-header-actions">
+          <button type="button" className="rd-btn-primary" onClick={() => navigate("/restaurant/menu")}>
+            <span className="material-symbols-outlined">add_circle</span>
+            Manage menu
           </button>
         </div>
-      </section>
-    </div>
+      </div>
+
+      {error ? <div className="rd-alert-error">{error}</div> : null}
+      {ordersError ? <div className="rd-alert-error">{ordersError}</div> : null}
+
+      <div className="rd-stats-grid">
+        <div className="rd-stat-card">
+          <div className="rd-stat-top">
+            <div className="rd-stat-icon rd-stat-icon-green">
+              <span className="material-symbols-outlined">shopping_basket</span>
+            </div>
+          </div>
+          <p className="rd-stat-label">Today&apos;s orders</p>
+          <p className="rd-stat-value">
+            {ordersLoading ? "…" : stats.todayCount}
+            <span className="rd-stat-meta">{stats.totalCount} total</span>
+          </p>
+        </div>
+
+        <div className="rd-stat-card">
+          <div className="rd-stat-top">
+            <div className="rd-stat-icon rd-stat-icon-amber">
+              <span className="material-symbols-outlined">payments</span>
+            </div>
+          </div>
+          <p className="rd-stat-label">Today&apos;s revenue</p>
+          <p className="rd-stat-value">
+            {ordersLoading ? "…" : `$${stats.todayRevenue.toFixed(2)}`}
+            <span className="rd-stat-meta">Today</span>
+          </p>
+        </div>
+
+        <div className="rd-stat-card">
+          <div className="rd-stat-top">
+            <div className="rd-stat-icon rd-stat-icon-blue">
+              <span className="material-symbols-outlined">timer</span>
+            </div>
+          </div>
+          <p className="rd-stat-label">Active orders</p>
+          <p className="rd-stat-value">
+            {ordersLoading ? "…" : stats.activeCount}
+            <span className="rd-stat-meta">In progress</span>
+          </p>
+        </div>
+      </div>
+
+      <div className="rd-content-grid">
+        <div className="rd-panel">
+          <div className="rd-panel-header">
+            <h3 className="rd-panel-title">Recent orders</h3>
+          </div>
+          {ordersLoading ? (
+            <p className="rd-empty">Loading orders…</p>
+          ) : recentOrders.length === 0 ? (
+            <p className="rd-empty">No orders yet.</p>
+          ) : (
+            <div className="rd-table-wrap">
+              <table className="rd-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentOrders.map((order) => {
+                    const avatar = avatarColor(order.customerId);
+                    return (
+                      <tr key={order._id}>
+                        <td className="rd-order-id">#{String(order._id).slice(-6)}</td>
+                        <td>
+                          <div className="rd-customer-cell">
+                            <span
+                              className="rd-avatar"
+                              style={{ background: avatar.bg, color: avatar.text }}
+                            >
+                              {customerInitials(order.customerId)}
+                            </span>
+                            <span>{customerLabel(order.customerId)}</span>
+                          </div>
+                        </td>
+                        <td className="rd-items-text">{formatItems(order.items)}</td>
+                        <td>
+                          <span className={statusBadgeClass(order.status)}>
+                            {statusLabel(order.status)}
+                          </span>
+                        </td>
+                        <td className="rd-amount">${Number(order.totalAmount).toFixed(2)}</td>
+                        <td>
+                          <div className="rd-order-actions">
+                            {order.status === "PLACED" ? (
+                              <button
+                                type="button"
+                                className="rd-action-btn"
+                                disabled={orderActionId === order._id}
+                                onClick={() => handleOrderStatus(order._id, "ACCEPTED")}
+                              >
+                                Accept
+                              </button>
+                            ) : null}
+                            {order.status === "ACCEPTED" ? (
+                              <button
+                                type="button"
+                                className="rd-action-btn"
+                                disabled={orderActionId === order._id}
+                                onClick={() => handleOrderStatus(order._id, "PREPARING")}
+                              >
+                                Preparing
+                              </button>
+                            ) : null}
+                            {["PLACED", "ACCEPTED", "PREPARING"].includes(order.status) ? (
+                              <button
+                                type="button"
+                                className="rd-action-btn"
+                                disabled={orderActionId === order._id}
+                                onClick={() => handleOrderStatus(order._id, "CANCELLED")}
+                              >
+                                Cancel
+                              </button>
+                            ) : null}
+                            {!["PLACED", "ACCEPTED", "PREPARING"].includes(order.status) ? (
+                              <span className="rd-items-text">—</span>
+                            ) : null}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="rd-side-panel">
+          <div className="rd-info-card">
+            <h3>Quick links</h3>
+            <div className="rd-quick-links">
+              <button
+                type="button"
+                className="rd-quick-link"
+                onClick={() => navigate("/restaurant/menu")}
+              >
+                <span className="material-symbols-outlined">menu_book</span>
+                Menu items
+              </button>
+              <button
+                type="button"
+                className="rd-quick-link"
+                onClick={() => navigate("/restaurant/categories")}
+              >
+                <span className="material-symbols-outlined">category</span>
+                Categories
+              </button>
+              <button
+                type="button"
+                className="rd-quick-link"
+                onClick={() => navigate("/setup/restaurant")}
+              >
+                <span className="material-symbols-outlined">settings</span>
+                Profile settings
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </RestaurantShell>
   );
 }
 

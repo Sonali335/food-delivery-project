@@ -8,6 +8,7 @@ import {
   setGoogleCredentialHandler,
   unmountGoogleSignInButton,
 } from "../utils/googleGsiMount";
+import { getHomePathForRole } from "../utils/roleHome";
 
 const REDIRECT_AFTER_LOGIN_KEY = "redirectAfterLogin";
 
@@ -26,9 +27,10 @@ function Login() {
     if (next) {
       sessionStorage.removeItem(REDIRECT_AFTER_LOGIN_KEY);
       navigate(next);
-    } else {
-      navigate("/dashboard");
+      return;
     }
+    const role = localStorage.getItem("role");
+    navigate(getHomePathForRole(role));
   }, [navigate]);
 
   const handleGoogleCredential = useCallback(

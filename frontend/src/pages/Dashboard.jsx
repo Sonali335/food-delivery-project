@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
+import { getHomePathForRole } from "../utils/roleHome";
 import Button from "../components/Button";
 import { deleteProfile } from "../api/profile";
 import { getCustomerOrders } from "../api/orders";
@@ -90,6 +91,10 @@ function Dashboard() {
     }
   };
 
+  if (role === "restaurant" || role === "driver") {
+    return <Navigate to={getHomePathForRole(role)} replace />;
+  }
+
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>Dashboard</h1>
@@ -117,13 +122,6 @@ function Dashboard() {
       ) : null}
 
       <div className={styles.actions}>
-        {role === "restaurant" ? (
-          <Button
-            text="Restaurant dashboard"
-            onClick={() => navigate("/restaurant/dashboard")}
-            disabled={false}
-          />
-        ) : null}
         <Button
           text="Update profile"
           onClick={handleUpdateProfile}
