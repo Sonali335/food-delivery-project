@@ -17,6 +17,7 @@ import MenuEdit from "./pages/MenuEdit";
 import CategoryManager from "./pages/CategoryManager";
 import CustomerRestaurants from "./pages/CustomerRestaurants";
 import CustomerRestaurantMenu from "./pages/CustomerRestaurantMenu";
+import CustomerOrders from "./pages/CustomerOrders";
 
 function App() {
   return (
@@ -124,6 +125,14 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["customer"]}>
             <CustomerRestaurantMenu />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/orders"
+        element={
+          <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerOrders />
           </ProtectedRoute>
         }
       />

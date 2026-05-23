@@ -13,14 +13,15 @@ const parseResponse = async (response) => {
   return result;
 };
 
-export const createOrder = async (data) => {
+/** @param {{ restaurantId: string, items: { menuItemId: string, name: string, quantity: number, price: number }[] }} payload */
+export const createOrder = async (payload) => {
   const response = await fetch(`${getApiBase()}/api/orders`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...authHeader(),
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   });
   return parseResponse(response);
 };
