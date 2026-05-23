@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { getCategories, createCategory, deleteCategory } from "../api/category";
-import styles from "./pages.module.css";
+import RestaurantLayout from "../components/restaurant/RestaurantLayout";
 
 function CategoryManager() {
   const [categories, setCategories] = useState([]);
@@ -55,49 +54,72 @@ function CategoryManager() {
   };
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Categories</h1>
-      {error ? <div className={styles.error}>{error}</div> : null}
-      <form onSubmit={handleAdd} className={styles.cardGrid} style={{ marginBottom: "1.5rem" }}>
-        <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-          New category name
-          <input value={name} onChange={(ev) => setName(ev.target.value)} />
-        </label>
-        <button type="submit" disabled={saving}>
-          {saving ? "Adding…" : "Add category"}
-        </button>
-      </form>
-      {loading ? (
-        <p className={styles.hint}>Loading…</p>
-      ) : categories.length === 0 ? (
-        <p className={styles.hint}>No categories yet.</p>
-      ) : (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {categories.map((c) => (
-            <li
-              key={c._id}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderBottom: "1px solid #d6d3d1",
-                padding: "0.5rem 0",
-              }}
-            >
-              <span>{c.name}</span>
-              <button type="button" onClick={() => handleDelete(c._id)}>
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <p>
-        <Link className={styles.linkButton} to="/restaurant/dashboard">
-          Back to dashboard
-        </Link>
-      </p>
-    </div>
+    <RestaurantLayout>
+      <div className="rd-page-header">
+        <div>
+          <h1 className="rd-page-title">Categories</h1>
+          <p className="rd-page-subtitle">
+            Group menu items into categories customers can browse.
+          </p>
+        </div>
+      </div>
+
+      {error ? <div className="rd-alert-error">{error}</div> : null}
+
+      <div className="rd-category-add-panel">
+        <form className="rd-category-add-form" onSubmit={handleAdd}>
+          <div className="rd-form-field" style={{ marginBottom: 0, flex: 1 }}>
+            <label htmlFor="categoryName">New category name</label>
+            <input
+              id="categoryName"
+              type="text"
+              value={name}
+              onChange={(ev) => setName(ev.target.value)}
+              placeholder="e.g. Appetizers, Mains, Drinks"
+            />
+          </div>
+          <button type="submit" className="rd-btn-primary" disabled={saving || !name.trim()}>
+            <span className="material-symbols-outlined">add</span>
+            {saving ? "Adding…" : "Add category"}
+          </button>
+        </form>
+      </div>
+
+      <div className="rd-panel">
+        <div className="rd-panel-header">
+          <h3 className="rd-panel-title">Your categories</h3>
+          {!loading ? (
+            <span className="rd-category-count">{categories.length} total</span>
+          ) : null}
+        </div>
+
+        {loading ? (
+          <p className="rd-empty">Loading categories…</p>
+        ) : categories.length === 0 ? (
+          <p className="rd-empty">No categories yet. Add one above to organize your menu.</p>
+        ) : (
+          <ul className="rd-category-list">
+            {categories.map((c) => (
+              <li key={c._id} className="rd-category-item">
+                <div className="rd-category-item-left">
+                  <span className="rd-category-icon-wrap">
+                    <span className="material-symbols-outlined">category</span>
+                  </span>
+                  <span className="rd-category-name">{c.name}</span>
+                </div>
+                <button
+                  type="button"
+                  className="rd-menu-card-delete"
+                  onClick={() => handleDelete(c._id)}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </RestaurantLayout>
   );
 }
 
