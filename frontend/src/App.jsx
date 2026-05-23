@@ -15,6 +15,8 @@ import MenuList from "./pages/MenuList";
 import MenuCreate from "./pages/MenuCreate";
 import MenuEdit from "./pages/MenuEdit";
 import CategoryManager from "./pages/CategoryManager";
+import CustomerRestaurants from "./pages/CustomerRestaurants";
+import CustomerRestaurantMenu from "./pages/CustomerRestaurantMenu";
 
 function App() {
   return (
@@ -105,6 +107,23 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["restaurant"]}>
             <CategoryManager />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/customer/restaurants"
+        element={
+          <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerRestaurants />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/restaurant/:id"
+        element={
+          <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerRestaurantMenu />
           </ProtectedRoute>
         }
       />

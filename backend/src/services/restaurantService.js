@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const RestaurantProfile = require("../models/RestaurantProfile");
 
 const createError = (message, statusCode) => {
@@ -33,7 +34,37 @@ const updateRestaurantStatus = async (userId, status) => {
   return profile.status;
 };
 
+const formatRestaurantForCustomer = (profile) => ({
+  id: profile.userId,
+  name: profile.restaurantName,
+  location: profile.location,
+  cuisine: profile.cuisineType || null,
+  rating: profile.ratingAverage ?? 0,
+  image: profile.image || profile.imageUrl || null,
+  status: profile.status || "open",
+});
+
+const getAllRestaurants = async () => {
+  const profiles = await RestaurantProfile.find().sort({ restaurantName: 1 }).lean();
+  return profiles.map(formatRestaurantForCustomer);
+};
+
+const getRestaurantById = async (id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw createError("Invalid restaurant id", 400);
+  }
+
+  const profile = await RestaurantProfile.findOne({ userId: id }).lean();
+  if (!profile) {
+    throw createError("Restaurant not found", 404);
+  }
+
+  return formatRestaurantForCustomer(profile);
+};
+
 module.exports = {
   getRestaurantStatus,
   updateRestaurantStatus,
+  getAllRestaurants,
+  getRestaurantById,
 };

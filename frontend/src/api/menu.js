@@ -5,6 +5,20 @@ const authHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+export const getMenuByRestaurant = async (restaurantId) => {
+  const response = await fetch(`${getApiBase()}/api/menu/restaurant/${restaurantId}`, {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+    },
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.message || "Could not load menu");
+  }
+  return result;
+};
+
 export const getMenuItems = async () => {
   const response = await fetch(`${getApiBase()}/api/menu/`, {
     method: "GET",

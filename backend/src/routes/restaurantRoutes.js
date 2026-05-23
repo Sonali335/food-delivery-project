@@ -19,4 +19,18 @@ router.patch(
   restaurantController.updateRestaurantStatus
 );
 
+router.get(
+  "/",
+  authMiddleware,
+  roleMiddleware(["customer"]),
+  restaurantController.getAllRestaurants
+);
+
+router.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["customer"]),
+  restaurantController.getRestaurantById
+);
+
 module.exports = router;

@@ -17,6 +17,13 @@ router.post(
 
 router.post("/", authMiddleware, roleMiddleware(["restaurant"]), menuController.createMenuItem);
 
+router.get(
+  "/restaurant/:restaurantId",
+  authMiddleware,
+  roleMiddleware(["customer"]),
+  menuController.getMenuByRestaurant
+);
+
 router.get("/", authMiddleware, roleMiddleware(["restaurant"]), menuController.getMenuItemsByRestaurant);
 
 router.get("/:id", authMiddleware, roleMiddleware(["restaurant"]), menuController.getMenuItemById);

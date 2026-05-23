@@ -140,10 +140,31 @@ const deleteMenuItem = async (restaurantId, itemId) => {
   }
 };
 
+const getMenuByRestaurant = async (restaurantId) => {
+  if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
+    throw createError("Invalid restaurant id", 400);
+  }
+
+  const items = await MenuItem.find({ restaurantId, isAvailable: true })
+    .populate({ path: "categoryId", select: "name" })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return items.map((item) => ({
+    itemId: item._id,
+    name: item.name,
+    description: item.description || "",
+    price: item.price,
+    image: item.imageUrl || null,
+    category: item.categoryId?.name || null,
+  }));
+};
+
 module.exports = {
   createMenuItem,
   getMenuItemsByRestaurant,
   getMenuItemById,
   updateMenuItem,
   deleteMenuItem,
+  getMenuByRestaurant,
 };

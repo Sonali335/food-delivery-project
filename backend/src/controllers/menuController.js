@@ -81,6 +81,15 @@ const uploadMenuImage = async (req, res) => {
   }
 };
 
+const getMenuByRestaurant = async (req, res) => {
+  try {
+    const items = await menuService.getMenuByRestaurant(req.params.restaurantId);
+    return res.status(200).json({ items });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createMenuItem,
   getMenuItemsByRestaurant,
@@ -88,4 +97,5 @@ module.exports = {
   updateMenuItem,
   deleteMenuItem,
   uploadMenuImage,
+  getMenuByRestaurant,
 };
