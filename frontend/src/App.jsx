@@ -18,6 +18,7 @@ import CategoryManager from "./pages/CategoryManager";
 import CustomerRestaurants from "./pages/CustomerRestaurants";
 import CustomerRestaurantMenu from "./pages/CustomerRestaurantMenu";
 import CustomerOrders from "./pages/CustomerOrders";
+import CustomerOrderDetails from "./pages/CustomerOrderDetails";
 
 function App() {
   return (
@@ -133,6 +134,14 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["customer"]}>
             <CustomerOrders />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/orders/:id"
+        element={
+          <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerOrderDetails />
           </ProtectedRoute>
         }
       />

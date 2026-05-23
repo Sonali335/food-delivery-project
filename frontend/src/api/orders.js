@@ -26,20 +26,24 @@ export const createOrder = async (payload) => {
   return parseResponse(response);
 };
 
+/** @returns {Promise<{ order: object }>} */
 export const getOrder = async (id) => {
-  const response = await fetch(`${getApiBase()}/api/orders/${id}`, {
+  const response = await fetch(`${getApiBase()}/api/orders/${encodeURIComponent(id)}`, {
     method: "GET",
     headers: {
+      "Content-Type": "application/json",
       ...authHeader(),
     },
   });
   return parseResponse(response);
 };
 
+/** @returns {Promise<{ orders: object[] }>} */
 export const getCustomerOrders = async () => {
   const response = await fetch(`${getApiBase()}/api/orders/customer`, {
     method: "GET",
     headers: {
+      "Content-Type": "application/json",
       ...authHeader(),
     },
   });
