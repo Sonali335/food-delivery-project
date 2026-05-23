@@ -1,10 +1,9 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getStatus, updateStatus } from "../api/restaurant";
 import { getRestaurantOrders, updateOrderStatus } from "../api/orders";
 import { getProfile } from "../api/profile";
 import { connectSocket } from "../socket";
-import RestaurantShell from "../components/restaurant/RestaurantShell";
+import RestaurantLayout from "../components/restaurant/RestaurantLayout";
 
 const ACTIVE_STATUSES = ["PLACED", "ACCEPTED", "PREPARING"];
 
@@ -73,10 +72,6 @@ function computeStats(orders) {
 function RestaurantDashboard() {
   const navigate = useNavigate();
   const [restaurantName, setRestaurantName] = useState("");
-  const [status, setStatus] = useState("open");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState("");
@@ -84,23 +79,11 @@ function RestaurantDashboard() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      setError("");
-      try {
-        const [statusRes, profileRes] = await Promise.all([
-          getStatus(),
-          getProfile().catch(() => ({ profile: null })),
-        ]);
-        if (!cancelled) {
-          setStatus(statusRes.status || "open");
-          setRestaurantName(profileRes.profile?.restaurantName || "");
-        }
-      } catch (e) {
-        if (!cancelled) setError(e.message || "Failed to load status");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+    getProfile()
+      .then(({ profile }) => {
+        if (!cancelled && profile?.restaurantName) setRestaurantName(profile.restaurantName);
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -168,29 +151,10 @@ function RestaurantDashboard() {
     }
   };
 
-  const applyStatus = async (next) => {
-    setSaving(true);
-    setError("");
-    try {
-      const data = await updateStatus(next);
-      setStatus(data.status || next);
-    } catch (e) {
-      setError(e.message || "Update failed");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const welcomeName = restaurantName || "your restaurant";
 
   return (
-    <RestaurantShell
-      restaurantName={restaurantName}
-      status={status}
-      statusLoading={loading}
-      statusSaving={saving}
-      onSetStatus={applyStatus}
-    >
+    <RestaurantLayout>
       <div className="rd-page-header">
         <div>
           <h1 className="rd-page-title">Dashboard overview</h1>
@@ -206,7 +170,6 @@ function RestaurantDashboard() {
         </div>
       </div>
 
-      {error ? <div className="rd-alert-error">{error}</div> : null}
       {ordersError ? <div className="rd-alert-error">{ordersError}</div> : null}
 
       <div className="rd-stats-grid">
@@ -374,7 +337,7 @@ function RestaurantDashboard() {
           </div>
         </div>
       </div>
-    </RestaurantShell>
+    </RestaurantLayout>
   );
 }
 

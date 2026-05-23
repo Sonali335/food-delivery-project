@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getCategories } from "../api/category";
 import { getMenuItem, updateMenuItem, uploadMenuImage } from "../api/menu";
-import styles from "./pages.module.css";
+import RestaurantLayout from "../components/restaurant/RestaurantLayout";
 
 function resolveCategoryIdField(raw) {
   if (raw && typeof raw === "object" && raw._id != null) return String(raw._id);
@@ -40,7 +40,7 @@ function MenuEdit() {
         setCategoryId(resolveCategoryIdField(item.categoryId));
         setImageUrl(item.imageUrl || "");
       } catch (e) {
-        if (!cancelled) setError(e.message || "Failed to load");
+        if (!cancelled) setError(e.message || "Failed to load item");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -90,67 +90,93 @@ function MenuEdit() {
     }
   };
 
+  const thumbSrc = previewUrl || imageUrl || null;
+
   if (loading) {
     return (
-      <div className={styles.page}>
-        <p className={styles.hint}>Loading…</p>
-      </div>
+      <RestaurantLayout>
+        <p className="rd-empty">Loading…</p>
+      </RestaurantLayout>
     );
   }
 
-  const thumbSrc = previewUrl || imageUrl || null;
-
   return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Edit menu item</h1>
-      {error ? <div className={styles.error}>{error}</div> : null}
-      <form onSubmit={handleSubmit} className={styles.cardGrid}>
-        <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-          Name
-          <input value={name} onChange={(ev) => setName(ev.target.value)} required />
-        </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-          Description
-          <textarea value={description} onChange={(ev) => setDescription(ev.target.value)} rows={3} />
-        </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-          Price
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={price}
-            onChange={(ev) => setPrice(ev.target.value)}
-            required
-          />
-        </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-          Category
-          <select value={categoryId} onChange={(ev) => setCategoryId(ev.target.value)} required>
-            {categories.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-          Image (optional — new file is uploaded on save via Cloudinary)
-          <input type="file" accept="image/*" onChange={handleFileChange} />
-        </label>
-        {thumbSrc ? (
-          <img src={thumbSrc} alt="" width={120} height={120} style={{ objectFit: "cover", borderRadius: 4 }} />
-        ) : null}
-        <button type="submit" disabled={saving || !categories.length}>
-          {saving ? (pickedFile ? "Uploading & saving…" : "Saving…") : "Save changes"}
-        </button>
-      </form>
-      <p className={styles.hint}>
-        <Link className={styles.linkButton} to="/restaurant/menu">
-          Cancel
-        </Link>
-      </p>
-    </div>
+    <RestaurantLayout>
+      <div className="rd-page-header">
+        <div>
+          <h1 className="rd-page-title">Edit menu item</h1>
+          <p className="rd-page-subtitle">Update details for this dish.</p>
+        </div>
+      </div>
+
+      {error ? <div className="rd-alert-error">{error}</div> : null}
+
+      <div className="rd-form-panel">
+        <form onSubmit={handleSubmit}>
+          <div className="rd-form-field">
+            <label htmlFor="name">Name</label>
+            <input id="name" value={name} onChange={(ev) => setName(ev.target.value)} required />
+          </div>
+          <div className="rd-form-field">
+            <label htmlFor="description">Description</label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(ev) => setDescription(ev.target.value)}
+              rows={3}
+            />
+          </div>
+          <div className="rd-form-field">
+            <label htmlFor="price">Price</label>
+            <input
+              id="price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={price}
+              onChange={(ev) => setPrice(ev.target.value)}
+              required
+            />
+          </div>
+          <div className="rd-form-field">
+            <label htmlFor="category">Category</label>
+            <select
+              id="category"
+              value={categoryId}
+              onChange={(ev) => setCategoryId(ev.target.value)}
+              required
+            >
+              {categories.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="rd-form-field">
+            <label htmlFor="image">Image (optional)</label>
+            <input id="image" type="file" accept="image/*" onChange={handleFileChange} />
+          </div>
+          {thumbSrc ? (
+            <img
+              src={thumbSrc}
+              alt=""
+              width={120}
+              height={120}
+              style={{ objectFit: "cover", borderRadius: 8, marginBottom: "1rem" }}
+            />
+          ) : null}
+          <div className="rd-form-actions">
+            <button type="button" className="rd-btn-outline" onClick={() => navigate("/restaurant/menu")}>
+              Cancel
+            </button>
+            <button type="submit" className="rd-btn-primary" disabled={saving || !categories.length}>
+              {saving ? (pickedFile ? "Uploading & saving…" : "Saving…") : "Save changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </RestaurantLayout>
   );
 }
 
