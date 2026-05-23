@@ -26,37 +26,32 @@ function RestaurantShell({
       <header className="rd-topbar">
         <span className="rd-topbar-brand">Restaurant Portal</span>
         <div className="rd-topbar-actions">
-          <span className={`rd-status-pill rd-status-pill-${normalizedStatus}`}>
-            {normalizedStatus}
-          </span>
           {onSetStatus ? (
-            <div className="rd-topbar-status-group">
-              <button
-                type="button"
-                className="rd-topbar-status-btn"
-                disabled={statusSaving || statusLoading}
-                onClick={() => onSetStatus("open")}
+            <label className="rd-topbar-status-select-wrap">
+              <span
+                className={`rd-topbar-status-select-inner rd-topbar-status-select-inner-${normalizedStatus}`}
               >
-                Open
-              </button>
-              <button
-                type="button"
-                className="rd-topbar-status-btn"
-                disabled={statusSaving || statusLoading}
-                onClick={() => onSetStatus("busy")}
-              >
-                Busy
-              </button>
-              <button
-                type="button"
-                className="rd-topbar-status-btn"
-                disabled={statusSaving || statusLoading}
-                onClick={() => onSetStatus("closed")}
-              >
-                Closed
-              </button>
-            </div>
-          ) : null}
+                <select
+                  className="rd-topbar-status-select"
+                  value={normalizedStatus}
+                  disabled={statusSaving || statusLoading}
+                  onChange={(e) => onSetStatus(e.target.value)}
+                  aria-label="Restaurant status"
+                >
+                  <option value="open">Open</option>
+                  <option value="busy">Busy</option>
+                  <option value="closed">Closed</option>
+                </select>
+                <span className="material-symbols-outlined rd-topbar-status-chevron" aria-hidden>
+                  expand_more
+                </span>
+              </span>
+            </label>
+          ) : (
+            <span className={`rd-status-pill rd-status-pill-${normalizedStatus}`}>
+              {normalizedStatus}
+            </span>
+          )}
           <button type="button" className="rd-topbar-logout" onClick={handleLogout}>
             <span className="material-symbols-outlined">logout</span>
             Log out
@@ -99,8 +94,8 @@ function RestaurantShell({
             <div className="rd-sidebar-tip">
               <p className="rd-sidebar-tip-title">Store status</p>
               <p className="rd-sidebar-tip-text">
-                Use Open, Busy, or Closed in the header to control whether customers can place
-                orders.
+                Change status from the dropdown in the header to control whether customers can
+                place orders.
               </p>
             </div>
           </div>
