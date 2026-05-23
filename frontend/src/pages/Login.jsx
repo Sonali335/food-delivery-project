@@ -1,14 +1,13 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { googleLogin, login } from "../api/auth";
-import Input from "../components/Input";
-import Button from "../components/Button";
+import AuthLayout from "../components/auth/AuthLayout";
+import AuthField from "../components/auth/AuthField";
 import {
   mountGoogleSignInButton,
   setGoogleCredentialHandler,
   unmountGoogleSignInButton,
 } from "../utils/googleGsiMount";
-import styles from "./pages.module.css";
 
 const REDIRECT_AFTER_LOGIN_KEY = "redirectAfterLogin";
 
@@ -68,7 +67,7 @@ function Login() {
       theme: "outline",
       size: "large",
       text: "continue_with",
-      width: 384,
+      width: 400,
       locale: "en",
     })
       .then(() => {
@@ -85,20 +84,14 @@ function Login() {
   }, [googleClientId]);
 
   const finishLogin = async (event) => {
-    if (event && event.preventDefault) event.preventDefault();
+    if (event?.preventDefault) event.preventDefault();
     setError("");
     setLoading(true);
     try {
       const result = await login({ email, password });
       localStorage.setItem("token", result.token);
       localStorage.setItem("role", result.user.role);
-      const next = sessionStorage.getItem(REDIRECT_AFTER_LOGIN_KEY);
-      if (next) {
-        sessionStorage.removeItem(REDIRECT_AFTER_LOGIN_KEY);
-        navigate(next);
-      } else {
-        navigate("/dashboard");
-      }
+      applyAuthRedirect();
     } catch (err) {
       setError(err.message || "Login failed");
     } finally {
@@ -107,68 +100,82 @@ function Login() {
   };
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Log in</h1>
-      <p className={styles.hint}>
-        New user? <Link to="/">Create account</Link>
-      </p>
+    <AuthLayout
+      title="Log in"
+      subtitle="Enter your email and password to continue."
+      footerText="Don't have an account?"
+      footerLinkText="Sign Up"
+      footerLinkTo="/"
+    >
       {import.meta.env.DEV && !googleClientId ? (
-        <p className={styles.envHint}>
+        <p className="auth-env-hint">
           Google sign-in is off until{" "}
-          <code className={styles.envCode}>GOOGLE_CLIENT_ID</code> or{" "}
-          <code className={styles.envCode}>VITE_GOOGLE_CLIENT_ID</code> is set (e.g. in{" "}
-          <code className={styles.envCode}>backend/.env</code>), then restart Vite.
+          <code className="auth-env-code">VITE_GOOGLE_CLIENT_ID</code> is set, then restart Vite.
         </p>
       ) : null}
       {import.meta.env.DEV && googleClientId && window.location.hostname === "127.0.0.1" ? (
-        <p className={styles.envHint}>
-          Using <code className={styles.envCode}>127.0.0.1</code>? Add{" "}
-          <code className={styles.envCode}>http://127.0.0.1:5173</code> under{" "}
-          <strong>Authorized JavaScript origins</strong> in Google Cloud Console (same Web client
-          ID).
+        <p className="auth-env-hint">
+          Using <code className="auth-env-code">127.0.0.1</code>? Add{" "}
+          <code className="auth-env-code">http://127.0.0.1:5173</code> to Google Cloud authorized
+          origins.
         </p>
       ) : null}
       {location.state?.passwordReset ? (
-        <p className={styles.success}>Password updated. You can log in with your new password.</p>
+        <p className="auth-alert-success">
+          Password updated. You can log in with your new password.
+        </p>
       ) : null}
-      <form onSubmit={finishLogin}>
-        <button type="submit" className={styles.srSubmit} aria-hidden tabIndex={-1}>
+
+      <form className="auth-form" onSubmit={finishLogin}>
+        <button type="submit" className="auth-sr-submit" aria-hidden tabIndex={-1}>
           Submit
         </button>
-        <Input
+
+        <AuthField
+          id="email"
           label="Email"
           type="email"
+          icon="alternate_email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          placeholder="name@example.com"
+          required
+          autoComplete="email"
         />
-        <Input
+
+        <AuthField
+          id="password"
           label="Password"
           type="password"
+          icon="lock"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          required
+          autoComplete="current-password"
+          showPasswordToggle
+          forgotPasswordTo="/forgot-password"
         />
-        <p className={styles.hint}>
-          <Link to="/forgot-password">Forgot password?</Link>
-        </p>
-        {error ? <div className={styles.error}>{error}</div> : null}
-        <Button
-          text={loading ? "Signing in..." : "Log in"}
-          disabled={loading}
-          onClick={finishLogin}
-        />
+
+        {error ? <div className="auth-alert-error">{error}</div> : null}
+
+        <button type="submit" className="auth-submit" disabled={loading}>
+          {loading ? "Signing in…" : "Login"}
+          <span className="material-symbols-outlined" aria-hidden>
+            arrow_forward
+          </span>
+        </button>
       </form>
 
       {googleClientId ? (
-        <div className={styles.googleBlock}>
-          <p className={styles.orDivider}>or</p>
-          <div
-            className={styles.googleButtonHost}
-            ref={googleBtnRef}
-            aria-busy={googleLoading}
-          />
-        </div>
+        <>
+          <div className="auth-divider">
+            <span className="auth-divider-text">or continue with</span>
+          </div>
+          <div className="auth-google-block" ref={googleBtnRef} aria-busy={googleLoading} />
+        </>
       ) : null}
-    </div>
+    </AuthLayout>
   );
 }
 

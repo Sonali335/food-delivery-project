@@ -1,25 +1,18 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { googleLogin, signup } from "../api/auth";
 import { getPasswordPolicyMessage } from "../utils/passwordPolicy";
-import Input from "../components/Input";
-import Button from "../components/Button";
+import AuthLayout from "../components/auth/AuthLayout";
+import AuthField from "../components/auth/AuthField";
+import RoleSelector from "../components/auth/RoleSelector";
 import {
   mountGoogleSignInButton,
   setGoogleCredentialHandler,
   unmountGoogleSignInButton,
 } from "../utils/googleGsiMount";
-import styles from "./pages.module.css";
-
-const ROLES = [
-  { value: "customer", label: "Customer" },
-  { value: "driver", label: "Driver" },
-  { value: "restaurant", label: "Restaurant" },
-];
 
 function Signup() {
   const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("customer");
@@ -85,7 +78,7 @@ function Signup() {
       theme: "outline",
       size: "large",
       text: "signup_with",
-      width: 384,
+      width: 400,
       locale: "en",
     })
       .then(() => {
@@ -102,85 +95,85 @@ function Signup() {
   }, [googleClientId]);
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Create account</h1>
-      <p className={styles.hint}>
-        Already have an account? <Link to="/login">Log in</Link>
-      </p>
-
+    <AuthLayout
+      title="Create account"
+      subtitle="Sign up as a customer, driver, or restaurant."
+      footerText="Already have an account?"
+      footerLinkText="Log in"
+      footerLinkTo="/login"
+    >
       {googleClientId ? (
-        <div className={styles.googleBlock}>
+        <>
           <div
-            className={styles.googleButtonHost}
+            className="auth-google-block"
             ref={googleBtnRef}
             aria-busy={googleLoading}
           />
-          <p className={styles.hint}>No email code needed — Google has already verified your email.</p>
-          <p className={styles.orDivider}>or sign up with email</p>
-        </div>
+          <p className="auth-env-hint auth-env-hint-center">
+            No email code needed — Google verifies your email.
+          </p>
+          <div className="auth-divider">
+            <span className="auth-divider-text">or sign up with email</span>
+          </div>
+        </>
       ) : import.meta.env.DEV ? (
-        <p className={styles.envHint}>
+        <p className="auth-env-hint">
           Google sign-up is off until{" "}
-          <code className={styles.envCode}>GOOGLE_CLIENT_ID</code> or{" "}
-          <code className={styles.envCode}>VITE_GOOGLE_CLIENT_ID</code> is set (e.g. in{" "}
-          <code className={styles.envCode}>backend/.env</code>), then restart Vite.
+          <code className="auth-env-code">VITE_GOOGLE_CLIENT_ID</code> is set, then restart Vite.
         </p>
       ) : null}
       {import.meta.env.DEV && googleClientId && window.location.hostname === "127.0.0.1" ? (
-        <p className={styles.envHint}>
-          Using <code className={styles.envCode}>127.0.0.1</code>? Add{" "}
-          <code className={styles.envCode}>http://127.0.0.1:5173</code> under{" "}
-          <strong>Authorized JavaScript origins</strong> in Google Cloud Console.
+        <p className="auth-env-hint">
+          Using <code className="auth-env-code">127.0.0.1</code>? Add{" "}
+          <code className="auth-env-code">http://127.0.0.1:5173</code> to Google Cloud authorized
+          origins.
         </p>
       ) : null}
 
-      <form onSubmit={handleSubmit}>
-        <button type="submit" className={styles.srSubmit} aria-hidden tabIndex={-1}>
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <button type="submit" className="auth-sr-submit" aria-hidden tabIndex={-1}>
           Submit
         </button>
-        <Input
+
+        <AuthField
+          id="email"
           label="Email"
           type="email"
+          icon="alternate_email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          placeholder="name@example.com"
+          required
+          autoComplete="email"
         />
-        <Input
+
+        <AuthField
+          id="password"
           label="Password"
           type="password"
+          icon="lock"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          required
           minLength={8}
+          autoComplete="new-password"
+          showPasswordToggle
+          hint="At least 8 characters, with one number and one symbol (!@#$% etc.)."
         />
-        <p className={styles.hint}>
-          At least 8 characters, with at least one number and one symbol (!@#$% etc.).
-        </p>
 
-        <fieldset className={styles.roleFieldset}>
-          <legend className={styles.roleLegend}>I am a</legend>
-          {ROLES.map((r) => (
-            <label key={r.value} className={styles.radioLabel}>
-              <input
-                type="radio"
-                name="role"
-                value={r.value}
-                checked={role === r.value}
-                onChange={() => setRole(r.value)}
-              />
-              {r.label}
-            </label>
-          ))}
-        </fieldset>
+        <RoleSelector value={role} onChange={setRole} />
 
-        {error ? <div className={styles.error}>{error}</div> : null}
-        <Button
-          text={loading ? "Submitting..." : "Create account"}
-          onClick={(e) => {
-            handleSubmit(e);
-          }}
-          disabled={loading}
-        />
+        {error ? <div className="auth-alert-error">{error}</div> : null}
+
+        <button type="submit" className="auth-submit" disabled={loading}>
+          {loading ? "Creating account…" : "Create account"}
+          <span className="material-symbols-outlined" aria-hidden>
+            arrow_forward
+          </span>
+        </button>
       </form>
-    </div>
+    </AuthLayout>
   );
 }
 
