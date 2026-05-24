@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { completeDriverProfile, getProfile, tryPasswordUpdateIfFilled } from "../api/profile";
-import Input from "../components/Input";
-import Button from "../components/Button";
+import DriverLayout from "../components/driver/DriverLayout";
 import PasswordUpdateFields from "../components/PasswordUpdateFields";
 import styles from "./pages.module.css";
 
@@ -70,7 +69,7 @@ function DriverProfileSetup() {
         vehicleNumber: pick(placeholders.vehicleNumber, vehicleNumber),
         licenseNumber: pick(placeholders.licenseNumber, licenseNumber),
       });
-      navigate("/dashboard");
+      navigate("/driver/dashboard");
     } catch (err) {
       setError(err.message || "Could not save profile");
     } finally {
@@ -79,71 +78,91 @@ function DriverProfileSetup() {
   };
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Driver profile</h1>
-      <form onSubmit={handleSubmit}>
-        <button type="submit" className={styles.srSubmit} aria-hidden tabIndex={-1}>
-          Submit
-        </button>
-        <Input
-          label="Username"
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder={placeholders.username}
-        />
-        <Input
-          label="Phone"
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder={placeholders.phone}
-        />
-        <Input
-          label="Vehicle type"
-          type="text"
-          value={vehicleType}
-          onChange={(e) => setVehicleType(e.target.value)}
-          placeholder={placeholders.vehicleType}
-        />
-        <Input
-          label="Vehicle number"
-          type="text"
-          value={vehicleNumber}
-          onChange={(e) => setVehicleNumber(e.target.value)}
-          placeholder={placeholders.vehicleNumber}
-        />
-        <Input
-          label="License number"
-          type="text"
-          value={licenseNumber}
-          onChange={(e) => setLicenseNumber(e.target.value)}
-          placeholder={placeholders.licenseNumber}
-        />
-        <PasswordUpdateFields
-          currentPassword={currentPassword}
-          onCurrentPasswordChange={setCurrentPassword}
-          newPassword={newPassword}
-          onNewPasswordChange={setNewPassword}
-          confirmPassword={confirmPassword}
-          onConfirmPasswordChange={setConfirmPassword}
-        />
-        {error ? <div className={styles.error}>{error}</div> : null}
-        <div className={styles.actions}>
-          <Button
-            text="Back to dashboard"
-            variant="secondary"
-            onClick={() => navigate("/dashboard")}
-            disabled={false}
+    <DriverLayout>
+      <div className="dd-page-header">
+        <h1 className="dd-page-title">Profile settings</h1>
+        <p className="dd-page-subtitle">Update your driver details or account password.</p>
+      </div>
+
+      <div className="dd-form-panel">
+        <form onSubmit={handleSubmit}>
+          <button type="submit" className={styles.srSubmit} aria-hidden tabIndex={-1}>
+            Submit
+          </button>
+          <div className="dd-form-field">
+            <label htmlFor="username">Username</label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder={placeholders.username}
+            />
+          </div>
+          <div className="dd-form-field">
+            <label htmlFor="phone">Phone</label>
+            <input
+              id="phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder={placeholders.phone}
+            />
+          </div>
+          <div className="dd-form-field">
+            <label htmlFor="vehicleType">Vehicle type</label>
+            <input
+              id="vehicleType"
+              type="text"
+              value={vehicleType}
+              onChange={(e) => setVehicleType(e.target.value)}
+              placeholder={placeholders.vehicleType}
+            />
+          </div>
+          <div className="dd-form-field">
+            <label htmlFor="vehicleNumber">Vehicle number</label>
+            <input
+              id="vehicleNumber"
+              type="text"
+              value={vehicleNumber}
+              onChange={(e) => setVehicleNumber(e.target.value)}
+              placeholder={placeholders.vehicleNumber}
+            />
+          </div>
+          <div className="dd-form-field">
+            <label htmlFor="licenseNumber">License number</label>
+            <input
+              id="licenseNumber"
+              type="text"
+              value={licenseNumber}
+              onChange={(e) => setLicenseNumber(e.target.value)}
+              placeholder={placeholders.licenseNumber}
+            />
+          </div>
+          <PasswordUpdateFields
+            currentPassword={currentPassword}
+            onCurrentPasswordChange={setCurrentPassword}
+            newPassword={newPassword}
+            onNewPasswordChange={setNewPassword}
+            confirmPassword={confirmPassword}
+            onConfirmPasswordChange={setConfirmPassword}
           />
-          <Button
-            text={loading ? "Saving..." : "Complete profile"}
-            disabled={loading}
-            onClick={handleSubmit}
-          />
-        </div>
-      </form>
-    </div>
+          {error ? <div className="dd-alert-error">{error}</div> : null}
+          <div className="dd-form-actions">
+            <button
+              type="button"
+              className="dd-btn-outline"
+              onClick={() => navigate("/driver/dashboard")}
+            >
+              Back to dashboard
+            </button>
+            <button type="submit" className="dd-btn-primary" style={{ width: "auto" }} disabled={loading}>
+              {loading ? "Saving…" : "Save changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </DriverLayout>
   );
 }
 
