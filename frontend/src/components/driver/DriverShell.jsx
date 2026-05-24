@@ -84,7 +84,7 @@ function DriverShell({
               <span className="material-symbols-outlined">list_alt</span>
               Order history
             </NavLink>
-            <NavLink to="/driver/dashboard#earnings" className={linkClass}>
+            <NavLink to="/driver/earnings" className={linkClass}>
               <span className="material-symbols-outlined">payments</span>
               Earnings
             </NavLink>

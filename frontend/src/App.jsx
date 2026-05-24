@@ -11,6 +11,7 @@ import RestaurantProfileSetup from "./pages/RestaurantProfileSetup";
 import Dashboard from "./pages/Dashboard";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
 import DriverDashboard from "./pages/DriverDashboard";
+import DriverEarnings from "./pages/DriverEarnings";
 import MenuList from "./pages/MenuList";
 import MenuCreate from "./pages/MenuCreate";
 import MenuEdit from "./pages/MenuEdit";
@@ -64,6 +65,14 @@ function App() {
         }
       />
 
+      <Route
+        path="/driver/earnings"
+        element={
+          <ProtectedRoute allowedRoles={["driver"]}>
+            <DriverEarnings />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/driver/dashboard"
         element={

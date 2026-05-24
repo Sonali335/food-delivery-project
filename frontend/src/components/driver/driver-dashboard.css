@@ -874,3 +874,555 @@
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
   user-select: none;
 }
+
+/* Earnings page */
+.dd-earn-bento {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .dd-earn-bento {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .dd-earn-bento {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.dd-earn-balance-card {
+  grid-column: span 1;
+  background: #fff;
+  border: 1px solid #fafafa;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .dd-earn-balance-card {
+    grid-column: span 2;
+  }
+}
+
+.dd-earn-balance-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.dd-earn-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6c7a71;
+  margin: 0 0 0.25rem;
+}
+
+.dd-earn-balance-value {
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: #121c2a;
+}
+
+.dd-earn-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.dd-earn-trend .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.dd-earn-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  height: 12rem;
+  margin-top: 1rem;
+}
+
+.dd-earn-chart-col {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+}
+
+.dd-earn-chart-bar {
+  width: 100%;
+  background: rgba(0, 108, 73, 0.1);
+  border-radius: 0.5rem 0.5rem 0 0;
+  transition: background 0.2s, transform 0.2s;
+  position: relative;
+  cursor: pointer;
+  min-height: 1rem;
+}
+
+.dd-earn-chart-bar:hover {
+  background: rgba(0, 108, 73, 0.2);
+}
+
+.dd-earn-chart-bar-highlight {
+  background: #10b981;
+}
+
+.dd-earn-chart-bar-highlight:hover {
+  transform: scaleY(1.02);
+}
+
+.dd-earn-chart-tooltip {
+  position: absolute;
+  top: -2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #27313f;
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.dd-earn-chart-bar-highlight:hover .dd-earn-chart-tooltip {
+  opacity: 1;
+}
+
+.dd-earn-chart-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #6c7a71;
+  text-transform: uppercase;
+  padding: 0 0.25rem;
+}
+
+.dd-earn-withdraw-card {
+  background: #006c49;
+  color: #fff;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px rgba(0, 108, 73, 0.25);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dd-earn-withdraw-title {
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.dd-earn-withdraw-value {
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.dd-earn-withdraw-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #006c49;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 4px 0 #0b513d;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.dd-earn-withdraw-btn:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.dd-earn-metrics-card {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid #fafafa;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.dd-earn-metric-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.dd-earn-metric-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dd-earn-metric-icon-green {
+  background: #e6eeff;
+  color: #006c49;
+}
+
+.dd-earn-metric-icon-amber {
+  background: #ffddb8;
+  color: #855300;
+}
+
+.dd-earn-metric-value {
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.dd-earn-divider {
+  border: none;
+  border-top: 1px solid #f5f5f5;
+  margin: 0 0 1.5rem;
+}
+
+.dd-earn-payouts-panel {
+  background: #fff;
+  border-radius: 0.75rem;
+  border: 1px solid #fafafa;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.dd-earn-payouts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.dd-earn-section-title {
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: #121c2a;
+}
+
+.dd-earn-icon-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dd-earn-icon-btn {
+  padding: 0.5rem;
+  border: 1px solid #f5f5f5;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #6c7a71;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.dd-earn-icon-btn:hover {
+  background: #fafafa;
+}
+
+.dd-earn-table-wrap {
+  overflow-x: auto;
+}
+
+.dd-earn-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.dd-earn-table th {
+  padding: 1rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6c7a71;
+  background: #eff4ff;
+}
+
+.dd-earn-th-right {
+  text-align: right;
+}
+
+.dd-earn-table td {
+  padding: 1.25rem 1.5rem;
+  font-size: 0.9375rem;
+  border-top: 1px solid #fafafa;
+}
+
+.dd-earn-table tbody tr {
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.dd-earn-table tbody tr:hover td {
+  background: #fafafa;
+}
+
+.dd-earn-td-bold {
+  font-weight: 600;
+  color: #121c2a;
+}
+
+.dd-earn-td-muted {
+  color: #6c7a71;
+}
+
+.dd-earn-td-right {
+  text-align: right;
+}
+
+.dd-earn-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.dd-earn-badge-completed {
+  background: rgba(173, 237, 211, 0.5);
+  color: #306d58;
+}
+
+.dd-earn-badge-pending {
+  background: #ffddb8;
+  color: #523200;
+}
+
+.dd-earn-badge-failed {
+  background: #ffdad6;
+  color: #93000a;
+}
+
+.dd-earn-payouts-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #f5f5f5;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.dd-earn-footer-text {
+  font-size: 0.875rem;
+  color: #6c7a71;
+  margin: 0;
+}
+
+.dd-earn-pagination {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dd-earn-page-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6c7a71;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.2s;
+}
+
+.dd-earn-page-btn:hover {
+  color: #006c49;
+}
+
+.dd-earn-page-btn-active {
+  color: #006c49;
+}
+
+.dd-earn-insights-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .dd-earn-insights-grid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.dd-earn-insight-card {
+  background: #eff4ff;
+  padding: 2rem;
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .dd-earn-insight-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 2rem;
+  }
+}
+
+.dd-earn-insight-blob {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 16rem;
+  height: 16rem;
+  background: rgba(16, 185, 129, 0.05);
+  border-radius: 50%;
+  transform: translate(50%, -50%);
+  pointer-events: none;
+}
+
+.dd-earn-insight-visual {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 10rem;
+  flex-shrink: 0;
+}
+
+.dd-earn-insight-placeholder {
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, #ecfdf5, #d9e3f6);
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 32px rgba(0, 108, 73, 0.12);
+}
+
+.dd-earn-insight-placeholder .material-symbols-outlined {
+  font-size: 3rem;
+  color: #006c49;
+}
+
+.dd-earn-insight-content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+}
+
+.dd-earn-insight-title {
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  color: #121c2a;
+}
+
+.dd-earn-insight-text {
+  font-size: 1rem;
+  color: #3c4a42;
+  line-height: 1.5;
+  margin: 0 0 1.5rem;
+}
+
+.dd-earn-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: none;
+  color: #006c49;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+.dd-earn-link-btn .material-symbols-outlined {
+  transition: transform 0.2s;
+}
+
+.dd-earn-link-btn:hover .material-symbols-outlined {
+  transform: translateX(4px);
+}
+
+.dd-earn-tax-card {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 1rem;
+  border: 1px solid #fafafa;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.dd-earn-tax-text {
+  font-size: 1rem;
+  color: #6c7a71;
+  line-height: 1.5;
+  margin: 0 0 1.5rem;
+}
+
+.dd-earn-tax-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #006c49;
+  border-radius: 0.75rem;
+  background: #fff;
+  color: #006c49;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s, color 0.2s;
+}
+
+.dd-earn-tax-btn:hover {
+  background: #006c49;
+  color: #fff;
+}
