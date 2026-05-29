@@ -3,6 +3,7 @@ const dns = require("dns");
 const http = require("http");
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 const { initSocket } = require("../socket");
 
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
@@ -54,6 +55,13 @@ connectDB();
 
 app.get("/", (req, res) => {
   res.send("API is running...");
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({
+    ok: true,
+    mongo: mongoose.connection.readyState === 1,
+  });
 });
 
 const server = http.createServer(app);

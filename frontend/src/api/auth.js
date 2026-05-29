@@ -1,97 +1,28 @@
-import { getApiBase } from "./config";
+import { apiFetch } from "./http";
 
-const signup = async ({ email, password, role }) => {
-  const response = await fetch(`${getApiBase()}/api/auth/signup`, {
+const jsonPost = (path, body) =>
+  apiFetch(path, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email, password, role }),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || "Signup failed");
-  }
-  return data;
-};
-
-const verifyOtp = async ({ email, otp }) => {
-  const response = await fetch(`${getApiBase()}/api/auth/verify-otp`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email, otp }),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || "Verification failed");
-  }
-  return data;
-};
-
-const login = async ({ email, password }) => {
-  const response = await fetch(`${getApiBase()}/api/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || "Login failed");
-  }
-  return data;
-};
-
-const googleLogin = async ({ idToken, role }) => {
-  const body = { idToken };
-  if (role) {
-    body.role = role;
-  }
-  const response = await fetch(`${getApiBase()}/api/auth/google`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || "Google login failed");
-  }
-  return data;
+
+const signup = ({ email, password, role }) =>
+  jsonPost("/api/auth/signup", { email, password, role });
+
+const verifyOtp = ({ email, otp }) => jsonPost("/api/auth/verify-otp", { email, otp });
+
+const login = ({ email, password }) => jsonPost("/api/auth/login", { email, password });
+
+const googleLogin = ({ idToken, role }) => {
+  const body = { idToken };
+  if (role) body.role = role;
+  return jsonPost("/api/auth/google", body);
 };
 
-const requestPasswordReset = async ({ email }) => {
-  const response = await fetch(`${getApiBase()}/api/auth/forgot-password`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email }),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || "Request failed");
-  }
-  return data;
-};
+const requestPasswordReset = ({ email }) => jsonPost("/api/auth/forgot-password", { email });
 
-const resetPasswordWithOtp = async ({ email, otp, newPassword }) => {
-  const response = await fetch(`${getApiBase()}/api/auth/reset-password`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email, otp, newPassword }),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || "Reset failed");
-  }
-  return data;
-};
+const resetPasswordWithOtp = ({ email, otp, newPassword }) =>
+  jsonPost("/api/auth/reset-password", { email, otp, newPassword });
 
 export { signup, verifyOtp, login, googleLogin, requestPasswordReset, resetPasswordWithOtp };
