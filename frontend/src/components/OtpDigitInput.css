@@ -1,0 +1,46 @@
+.otp-digit-row {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 400px) {
+  .otp-digit-row {
+    gap: 0.625rem;
+  }
+}
+
+.otp-digit-input {
+  width: 2.75rem;
+  height: 3.5rem;
+  text-align: center;
+  font-family: var(--auth-font-display, "Epilogue", system-ui, sans-serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--auth-on-surface, #121c2a);
+  background: var(--auth-surface-container-lowest, #fff);
+  border: 2px solid var(--auth-outline-variant, #bbcabf);
+  border-radius: var(--auth-radius-xl, 0.75rem);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  caret-color: var(--auth-primary, #006c49);
+}
+
+@media (min-width: 400px) {
+  .otp-digit-input {
+    width: 3rem;
+    height: 3.75rem;
+    font-size: 1.375rem;
+  }
+}
+
+.otp-digit-input:focus {
+  outline: none;
+  border-color: var(--auth-primary, #006c49);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.otp-digit-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

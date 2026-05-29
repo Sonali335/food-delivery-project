@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { verifyOtp } from "../api/auth";
+import { signup, verifyOtp } from "../api/auth";
 import { resolveOtpExpiresAt } from "../constants/otp";
-import Input from "../components/Input";
-import Button from "../components/Button";
-import OtpCountdown from "../components/OtpCountdown";
-import styles from "./pages.module.css";
+import AuthLayout from "../components/auth/AuthLayout";
+import OtpDigitInput, { OTP_LENGTH } from "../components/OtpDigitInput";
+import OtpResendTimer from "../components/OtpResendTimer";
+import "../components/OtpDigitInput.css";
+import "../components/OtpResendTimer.css";
 
 function initialEmail(locationState, queryEmail) {
   if (typeof locationState?.email === "string" && locationState.email.trim()) {
@@ -20,27 +21,42 @@ function OtpVerification() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
-  const [email, setEmail] = useState(() =>
-    initialEmail(location.state, searchParams.get("email"))
+  const email = useMemo(
+    () => initialEmail(location.state, searchParams.get("email")),
+    [location.state, searchParams]
   );
+
   const [otp, setOtp] = useState("");
+  const [otpExpiresAt, setOtpExpiresAt] = useState(() =>
+    resolveOtpExpiresAt(location.state?.otpExpiresAt)
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [verified, setVerified] = useState(false);
 
-  const otpExpiresAt = useMemo(
-    () => resolveOtpExpiresAt(location.state?.otpExpiresAt),
-    [location.state?.otpExpiresAt]
-  );
+  const signupMeta = location.state?.signupMeta;
 
   const handleSubmit = async (event) => {
-    if (event?.preventDefault) event.preventDefault();
+    event.preventDefault();
     setError("");
-    const end = Date.parse(otpExpiresAt);
-    if (Number.isFinite(end) && Date.now() > end) {
-      setError("This code has expired. Start again from sign up to receive a new code.");
+
+    if (!email) {
+      setError("Missing email. Please sign up again.");
       return;
     }
+
+    if (otp.length !== OTP_LENGTH) {
+      setError(`Enter the full ${OTP_LENGTH}-digit code.`);
+      return;
+    }
+
+    const end = Date.parse(otpExpiresAt);
+    if (Number.isFinite(end) && Date.now() > end) {
+      setError("This code has expired. Resend a code or start again from sign up.");
+      return;
+    }
+
     setLoading(true);
     try {
       await verifyOtp({ email, otp });
@@ -52,60 +68,119 @@ function OtpVerification() {
     }
   };
 
+  const handleResend = async () => {
+    if (!email || !signupMeta?.password || !signupMeta?.role) {
+      navigate("/", { replace: true });
+      return;
+    }
+    setError("");
+    setResendLoading(true);
+    try {
+      const data = await signup({
+        email,
+        password: signupMeta.password,
+        role: signupMeta.role,
+      });
+      setOtp("");
+      setOtpExpiresAt(resolveOtpExpiresAt(data.otpExpiresAt));
+    } catch (err) {
+      setError(err.message || "Could not resend code");
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   if (verified) {
     return (
-      <div className={styles.page}>
-        <h1 className={styles.title}>Email verified</h1>
-        <p className={styles.success}>Email verified successfully. You can now log in.</p>
-        <div className={styles.actions}>
-          <Button
-            text="Go to Login"
-            onClick={() => navigate("/login")}
-            disabled={false}
-          />
+      <AuthLayout
+        title="Email verified"
+        subtitle="Your account is ready. You can log in with your email and password."
+        heroIcon="check_circle"
+        backTo="/login"
+        footerText="Ready to continue?"
+        footerLinkText="Log in"
+        footerLinkTo="/login"
+      >
+        <div className="auth-alert-success">Email verified successfully.</div>
+        <button type="button" className="auth-submit" onClick={() => navigate("/login")}>
+          Go to log in
+          <span className="material-symbols-outlined" aria-hidden>
+            login
+          </span>
+        </button>
+      </AuthLayout>
+    );
+  }
+
+  if (!email) {
+    return (
+      <AuthLayout
+        title="Verify your email"
+        subtitle="Start from sign up to receive a verification code."
+        heroIcon="verified_user"
+        backTo="/"
+      >
+        <div className="auth-alert-error">
+          No email on this page.{" "}
+          <Link to="/">Go to sign up</Link>
         </div>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Verify your email</h1>
-      <p className={styles.hint}>
-        Enter the 6-digit code we sent you.{" "}
-        <Link to="/">Back to signup</Link>
-      </p>
-      <OtpCountdown
-        expiresAt={otpExpiresAt}
-        requestNewTo="/"
-        requestNewLabel="Back to sign up"
-      />
-      <form onSubmit={handleSubmit}>
-        <button type="submit" className={styles.srSubmit} aria-hidden tabIndex={-1}>
+    <AuthLayout
+      title="Verify your account"
+      subtitle={
+        <>
+          Enter the 6-digit code sent to{" "}
+          <strong className="auth-email-highlight">{email}</strong>
+        </>
+      }
+      heroIcon="verified_user"
+      backTo="/"
+      footerText="Wrong email?"
+      footerLinkText="Change email"
+      footerLinkTo="/"
+    >
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <button type="submit" className="auth-sr-submit" aria-hidden tabIndex={-1}>
           Submit
         </button>
-        <Input
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+
+        <OtpDigitInput value={otp} onChange={setOtp} disabled={loading} idPrefix="signup-otp" />
+
+        <OtpResendTimer
+          expiresAt={otpExpiresAt}
+          onResend={signupMeta ? handleResend : undefined}
+          resendLoading={resendLoading}
+          resendLabel="Resend code"
+          requestNewTo="/"
+          requestNewLabel="Back to sign up"
         />
-        <Input
-          label="OTP"
-          type="text"
-          value={otp}
-          onChange={(e) =>
-            setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
-          }
-        />
-        {error ? <div className={styles.error}>{error}</div> : null}
-        <Button
-          text={loading ? "Verifying..." : "Verify"}
-          disabled={loading}
-          onClick={handleSubmit}
-        />
+
+        {error ? <div className="auth-alert-error">{error}</div> : null}
+
+        <button
+          type="submit"
+          className="auth-submit"
+          disabled={loading || otp.length !== OTP_LENGTH}
+        >
+          {loading ? "Verifying…" : "Verify & proceed"}
+          <span className="material-symbols-outlined" aria-hidden>
+            arrow_forward
+          </span>
+        </button>
+
+        <button type="button" className="auth-text-link" onClick={() => navigate("/")}>
+          Change email
+        </button>
       </form>
-    </div>
+
+      <p className="auth-legal-hint">
+        By proceeding, you agree to our Terms of Service and Privacy Policy.
+      </p>
+    </AuthLayout>
   );
 }
 

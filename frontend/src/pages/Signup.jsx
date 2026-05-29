@@ -34,7 +34,11 @@ function Signup() {
     try {
       const data = await signup({ email, password, role });
       navigate("/verify-otp", {
-        state: { email, otpExpiresAt: data.otpExpiresAt ?? null },
+        state: {
+          email,
+          otpExpiresAt: data.otpExpiresAt ?? null,
+          signupMeta: { password, role },
+        },
       });
     } catch (err) {
       setError(err.message || "Signup failed");

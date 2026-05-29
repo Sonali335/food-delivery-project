@@ -1,0 +1,90 @@
+.otp-resend-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+  text-align: center;
+}
+
+.otp-resend-wrap--urgent .otp-resend-time {
+  color: #b91c1c;
+}
+
+.otp-resend-wrap--expired {
+  gap: 0.75rem;
+}
+
+.otp-resend-countdown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--auth-on-surface-variant, #3c4a42);
+}
+
+.otp-resend-icon {
+  font-size: 1.125rem;
+  color: var(--auth-outline, #6c7a71);
+}
+
+.otp-resend-time {
+  font-variant-numeric: tabular-nums;
+  color: var(--auth-primary, #006c49);
+  font-weight: 700;
+}
+
+.otp-resend-hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--auth-on-surface-variant, #3c4a42);
+  line-height: 1.45;
+}
+
+.otp-resend-hint a {
+  color: var(--auth-primary, #006c49);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.otp-resend-hint a:hover {
+  text-decoration: underline;
+}
+
+.otp-resend-expired {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.otp-resend-btn {
+  border: none;
+  background: none;
+  padding: 0.25rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--auth-primary, #006c49);
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.otp-resend-btn:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.otp-resend-btn--disabled,
+.otp-resend-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.otp-resend-btn--link {
+  display: inline-block;
+}
