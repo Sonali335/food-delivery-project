@@ -49,17 +49,31 @@ function CustomerRestaurants() {
         ) : restaurants.length === 0 ? (
           <p className="cd-empty">No restaurants available right now.</p>
         ) : (
-          <div className="cd-restaurant-grid" style={{ padding: "1.5rem" }}>
+          <div
+            className="cd-restaurant-grid"
+            style={{ padding: "1.5rem", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}
+          >
             {restaurants.map((r) => (
-              <Link key={r.id} to={`/customer/restaurant/${r.id}`} className="cd-restaurant-card">
-                {r.image ? <img src={r.image} alt="" /> : null}
+              <Link
+                key={r.id}
+                to={`/customer/restaurant/${r.id}`}
+                className="cd-restaurant-card cd-restaurant-card-large"
+              >
+                {r.image ? <img src={r.image} alt="" /> : (
+                  <div
+                    style={{
+                      height: "10rem",
+                      background: "linear-gradient(135deg, #ecfdf5, #dee9fc)",
+                    }}
+                  />
+                )}
                 <div className="cd-restaurant-card-body">
                   <h4>{r.name}</h4>
                   <p>
                     {r.location}
                     {r.cuisine ? ` · ${r.cuisine}` : ""}
                     {r.rating != null ? ` · ★ ${r.rating}` : ""}
-                    {r.status ? ` · ${r.status}` : ""}
+                    {r.status === "open" ? " · Open" : r.status ? ` · ${r.status}` : ""}
                   </p>
                 </div>
               </Link>
