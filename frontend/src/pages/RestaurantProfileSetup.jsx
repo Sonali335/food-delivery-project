@@ -40,7 +40,7 @@ function RestaurantProfileSetup() {
           setRestaurantName(profile.restaurantName ?? "");
           setPhone(profile.phone ?? "");
           setLocationText(profile.location ?? "");
-          if (!onboarding && isRestaurantProfileComplete(profile)) {
+          if (onboarding && isRestaurantProfileComplete(profile)) {
             navigate(getHomePathForRole("restaurant"), { replace: true });
           }
         }

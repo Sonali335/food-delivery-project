@@ -37,7 +37,7 @@ function DriverProfileSetup() {
           setVehicleType(profile.vehicleType ?? "");
           setVehicleNumber(profile.vehicleNumber ?? "");
           setLicenseNumber(profile.licenseNumber ?? "");
-          if (!onboarding && isDriverProfileComplete(profile)) {
+          if (onboarding && isDriverProfileComplete(profile)) {
             navigate(getHomePathForRole("driver"), { replace: true });
           }
         }

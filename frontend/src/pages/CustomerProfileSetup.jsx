@@ -41,7 +41,7 @@ function CustomerProfileSetup() {
           setCity(addr?.city ?? "");
           setStateVal(addr?.state ?? "");
           setPostalCode(addr?.postalCode ?? "");
-          if (!onboarding && isCustomerProfileComplete(profile)) {
+          if (onboarding && isCustomerProfileComplete(profile)) {
             navigate(getHomePathForRole("customer"), { replace: true });
           }
         }
