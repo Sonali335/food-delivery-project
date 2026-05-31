@@ -321,14 +321,6 @@ function CustomerRestaurantMenu() {
                   <>
                     {cart.map((line) => (
                       <div key={line.menuItemId} className="cd-menu-cart-line">
-                        <button
-                          type="button"
-                          className="cd-menu-cart-delete"
-                          onClick={() => removeFromCart(line.menuItemId)}
-                          aria-label={`Remove ${line.name}`}
-                        >
-                          <span className="material-symbols-outlined">delete</span>
-                        </button>
                         <div className="cd-menu-cart-line-info">
                           <p className="cd-menu-cart-line-name">{line.name}</p>
                           <div className="cd-menu-qty">
@@ -340,9 +332,7 @@ function CustomerRestaurantMenu() {
                             >
                               <span className="material-symbols-outlined">remove</span>
                             </button>
-                            <span style={{ fontSize: "0.875rem", fontWeight: 600 }}>
-                              {line.quantity}
-                            </span>
+                            <span className="cd-menu-qty-value">{line.quantity}</span>
                             <button
                               type="button"
                               className="cd-menu-qty-btn"
@@ -353,9 +343,19 @@ function CustomerRestaurantMenu() {
                             </button>
                           </div>
                         </div>
-                        <span className="cd-menu-cart-line-price">
-                          ${(Number(line.price) * line.quantity).toFixed(2)}
-                        </span>
+                        <div className="cd-menu-cart-line-end">
+                          <span className="cd-menu-cart-line-price">
+                            ${(Number(line.price) * line.quantity).toFixed(2)}
+                          </span>
+                          <button
+                            type="button"
+                            className="cd-menu-cart-delete"
+                            onClick={() => removeFromCart(line.menuItemId)}
+                            aria-label={`Remove ${line.name}`}
+                          >
+                            <span className="material-symbols-outlined">delete</span>
+                          </button>
+                        </div>
                       </div>
                     ))}
 
