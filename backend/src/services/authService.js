@@ -98,7 +98,7 @@ const verifyOtp = async ({ email, otp }) => {
       throw createError("Email already registered", 409);
     }
 
-    await User.create({
+    const user = await User.create({
       email: normalizedEmail,
       password: pending.passwordHash,
       role: pending.role,
@@ -106,7 +106,18 @@ const verifyOtp = async ({ email, otp }) => {
       accountStatus: "active",
     });
     await PendingSignup.deleteOne({ _id: pending._id });
-    return { message: "Email verified successfully." };
+
+    const token = generateToken(user);
+    const userData = user.toObject();
+    delete userData.password;
+
+    return {
+      message: "Email verified successfully.",
+      token,
+      role: user.role,
+      user: userData,
+      profileComplete: false,
+    };
   }
 
   const user = await User.findOne({ email: normalizedEmail });

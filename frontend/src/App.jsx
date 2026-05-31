@@ -60,7 +60,7 @@ function App() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireCompleteProfile>
             <Dashboard />
           </ProtectedRoute>
         }
@@ -69,7 +69,7 @@ function App() {
       <Route
         path="/driver/history"
         element={
-          <ProtectedRoute allowedRoles={["driver"]}>
+          <ProtectedRoute allowedRoles={["driver"]} requireCompleteProfile>
             <DriverOrderHistory />
           </ProtectedRoute>
         }
@@ -77,7 +77,7 @@ function App() {
       <Route
         path="/driver/earnings"
         element={
-          <ProtectedRoute allowedRoles={["driver"]}>
+          <ProtectedRoute allowedRoles={["driver"]} requireCompleteProfile>
             <DriverEarnings />
           </ProtectedRoute>
         }
@@ -85,7 +85,7 @@ function App() {
       <Route
         path="/driver/dashboard"
         element={
-          <ProtectedRoute allowedRoles={["driver"]}>
+          <ProtectedRoute allowedRoles={["driver"]} requireCompleteProfile>
             <DriverDashboard />
           </ProtectedRoute>
         }
@@ -93,7 +93,7 @@ function App() {
       <Route
         path="/restaurant/dashboard"
         element={
-          <ProtectedRoute allowedRoles={["restaurant"]}>
+          <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
             <RestaurantDashboard />
           </ProtectedRoute>
         }
@@ -101,7 +101,7 @@ function App() {
       <Route
         path="/restaurant/menu"
         element={
-          <ProtectedRoute allowedRoles={["restaurant"]}>
+          <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
             <MenuList />
           </ProtectedRoute>
         }
@@ -109,7 +109,7 @@ function App() {
       <Route
         path="/restaurant/menu/create"
         element={
-          <ProtectedRoute allowedRoles={["restaurant"]}>
+          <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
             <MenuCreate />
           </ProtectedRoute>
         }
@@ -117,7 +117,7 @@ function App() {
       <Route
         path="/restaurant/menu/edit/:id"
         element={
-          <ProtectedRoute allowedRoles={["restaurant"]}>
+          <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
             <MenuEdit />
           </ProtectedRoute>
         }
@@ -125,7 +125,7 @@ function App() {
       <Route
         path="/restaurant/categories"
         element={
-          <ProtectedRoute allowedRoles={["restaurant"]}>
+          <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
             <CategoryManager />
           </ProtectedRoute>
         }
@@ -134,7 +134,7 @@ function App() {
       <Route
         path="/customer/restaurants"
         element={
-          <ProtectedRoute allowedRoles={["customer"]}>
+          <ProtectedRoute allowedRoles={["customer"]} requireCompleteProfile>
             <CustomerRestaurants />
           </ProtectedRoute>
         }
@@ -142,7 +142,7 @@ function App() {
       <Route
         path="/customer/restaurant/:id"
         element={
-          <ProtectedRoute allowedRoles={["customer"]}>
+          <ProtectedRoute allowedRoles={["customer"]} requireCompleteProfile>
             <CustomerRestaurantMenu />
           </ProtectedRoute>
         }
@@ -150,7 +150,7 @@ function App() {
       <Route
         path="/customer/orders"
         element={
-          <ProtectedRoute allowedRoles={["customer"]}>
+          <ProtectedRoute allowedRoles={["customer"]} requireCompleteProfile>
             <CustomerOrders />
           </ProtectedRoute>
         }
@@ -158,7 +158,7 @@ function App() {
       <Route
         path="/customer/orders/:id"
         element={
-          <ProtectedRoute allowedRoles={["customer"]}>
+          <ProtectedRoute allowedRoles={["customer"]} requireCompleteProfile>
             <CustomerOrderDetails />
           </ProtectedRoute>
         }

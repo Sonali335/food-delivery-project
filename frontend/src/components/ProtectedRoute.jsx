@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
+import ProfileGate from "./ProfileGate";
 
-function ProtectedRoute({ children, allowedRoles }) {
+function ProtectedRoute({ children, allowedRoles, requireCompleteProfile = false }) {
   const token = localStorage.getItem("token");
   if (!token) {
     return <Navigate to="/login" replace />;
@@ -11,6 +12,11 @@ function ProtectedRoute({ children, allowedRoles }) {
       return <Navigate to="/dashboard" replace />;
     }
   }
+
+  if (requireCompleteProfile) {
+    return <ProfileGate>{children}</ProfileGate>;
+  }
+
   return children;
 }
 

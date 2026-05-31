@@ -10,7 +10,7 @@ import {
   setGoogleCredentialHandler,
   unmountGoogleSignInButton,
 } from "../utils/googleGsiMount";
-import { getHomePathForRole } from "../utils/roleHome";
+import { navigateAfterAuth } from "../utils/navigateAfterAuth";
 
 function Signup() {
   const navigate = useNavigate();
@@ -56,7 +56,7 @@ function Signup() {
         const result = await googleLogin({ idToken: response.credential, role });
         localStorage.setItem("token", result.token);
         localStorage.setItem("role", result.role);
-        navigate(getHomePathForRole(result.role));
+        await navigateAfterAuth(navigate, result.role);
       } catch (err) {
         setError(err.message || "Google sign-up failed");
       } finally {

@@ -147,7 +147,7 @@ Mounted in `backend/src/server.js` as `/api/auth` + router paths below.
 
 **Description:**  
 
-1. **Primary flow:** If a **`PendingSignup`** exists for the email, validates the OTP and expiry. On success: creates **`User`** with `isVerified: true`, `accountStatus: "active"`, deletes the pending row. **Does not issue a JWT** — the client should call **`POST /api/auth/login`** afterward.  
+1. **Primary flow:** If a **`PendingSignup`** exists for the email, validates the OTP and expiry. On success: creates **`User`** with `isVerified: true`, `accountStatus: "active"`, deletes the pending row, and returns a **JWT** plus `role` so the client can continue to profile setup without a separate login step.  
 
 2. **Legacy flow:** If no `PendingSignup` but a **`User`** exists with a signup **`OtpVerification`** record (`purpose` `signup` or legacy docs without `purpose`), the previous verify behavior still applies (activate user, clear signup OTPs).
 
@@ -164,9 +164,15 @@ Mounted in `backend/src/server.js` as `/api/auth` + router paths below.
 
 ```json
 {
-  "message": "Email verified successfully."
+  "message": "Email verified successfully.",
+  "token": "<JWT>",
+  "role": "customer",
+  "user": { "email": "user@example.com", "role": "customer", "isVerified": true },
+  "profileComplete": false
 }
 ```
+
+(`token` / `role` / `user` are returned for the **PendingSignup → User** path. Legacy verify-only responses may omit them.)
 
 **Error responses (non-exhaustive)**
 

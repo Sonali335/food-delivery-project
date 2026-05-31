@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { signup, verifyOtp } from "../api/auth";
+import { login, signup, verifyOtp } from "../api/auth";
 import { resolveOtpExpiresAt } from "../constants/otp";
+import { navigateAfterAuth } from "../utils/navigateAfterAuth";
 import AuthLayout from "../components/auth/AuthLayout";
 import OtpDigitInput, { OTP_LENGTH } from "../components/OtpDigitInput";
 import OtpResendTimer from "../components/OtpResendTimer";
@@ -33,9 +34,29 @@ function OtpVerification() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
-  const [verified, setVerified] = useState(false);
 
   const signupMeta = location.state?.signupMeta;
+
+  const finishVerification = async () => {
+    const data = await verifyOtp({ email, otp });
+
+    if (data.token) {
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.role);
+      await navigateAfterAuth(navigate, data.role);
+      return;
+    }
+
+    if (signupMeta?.password) {
+      const loginResult = await login({ email, password: signupMeta.password });
+      localStorage.setItem("token", loginResult.token);
+      localStorage.setItem("role", loginResult.user.role);
+      await navigateAfterAuth(navigate, loginResult.user.role);
+      return;
+    }
+
+    navigate("/login", { replace: true, state: { verifiedEmail: email } });
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -59,8 +80,7 @@ function OtpVerification() {
 
     setLoading(true);
     try {
-      await verifyOtp({ email, otp });
-      setVerified(true);
+      await finishVerification();
     } catch (err) {
       setError(err.message || "Verification failed");
     } finally {
@@ -89,28 +109,6 @@ function OtpVerification() {
       setResendLoading(false);
     }
   };
-
-  if (verified) {
-    return (
-      <AuthLayout
-        title="Email verified"
-        subtitle="Your account is ready. You can log in with your email and password."
-        heroIcon="check_circle"
-        backTo="/login"
-        footerText="Ready to continue?"
-        footerLinkText="Log in"
-        footerLinkTo="/login"
-      >
-        <div className="auth-alert-success">Email verified successfully.</div>
-        <button type="button" className="auth-submit" onClick={() => navigate("/login")}>
-          Go to log in
-          <span className="material-symbols-outlined" aria-hidden>
-            login
-          </span>
-        </button>
-      </AuthLayout>
-    );
-  }
 
   if (!email) {
     return (
@@ -166,7 +164,7 @@ function OtpVerification() {
           className="auth-submit"
           disabled={loading || otp.length !== OTP_LENGTH}
         >
-          {loading ? "Verifying…" : "Verify & proceed"}
+          {loading ? "Verifying…" : "Verify & continue"}
           <span className="material-symbols-outlined" aria-hidden>
             arrow_forward
           </span>
@@ -178,7 +176,7 @@ function OtpVerification() {
       </form>
 
       <p className="auth-legal-hint">
-        By proceeding, you agree to our Terms of Service and Privacy Policy.
+        Next you will complete your profile, then go to your dashboard.
       </p>
     </AuthLayout>
   );

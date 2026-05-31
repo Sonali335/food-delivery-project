@@ -87,10 +87,13 @@ All email OTP codes are **6 digits**, valid for **10 minutes**.
 ### Sign up (email)
 
 1. **`/`** — email, password, role (customer / driver / restaurant)
-2. **`/verify-otp`** — 6-box code entry, countdown timer, resend when expired
-3. **`/login`** — log in after verification
+2. **`/verify-otp`** — 6-digit code, then you are signed in automatically
+3. **`/setup/{role}`** — required profile questions for that role
+4. **Role dashboard** — only after profile is complete
 
-Google sign-up skips OTP and goes straight to the role home dashboard.
+Google sign-up skips OTP but still goes through profile setup if details are missing.
+
+Returning users who log in without a complete profile are sent to the same setup screen before the dashboard.
 
 ### Forgot password
 

@@ -8,7 +8,7 @@ import {
   setGoogleCredentialHandler,
   unmountGoogleSignInButton,
 } from "../utils/googleGsiMount";
-import { getHomePathForRole } from "../utils/roleHome";
+import { navigateAfterAuth } from "../utils/navigateAfterAuth";
 
 const REDIRECT_AFTER_LOGIN_KEY = "redirectAfterLogin";
 
@@ -22,7 +22,7 @@ function Login() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const googleBtnRef = useRef(null);
 
-  const applyAuthRedirect = useCallback(() => {
+  const applyAuthRedirect = useCallback(async () => {
     const next = sessionStorage.getItem(REDIRECT_AFTER_LOGIN_KEY);
     if (next) {
       sessionStorage.removeItem(REDIRECT_AFTER_LOGIN_KEY);
@@ -30,7 +30,7 @@ function Login() {
       return;
     }
     const role = localStorage.getItem("role");
-    navigate(getHomePathForRole(role));
+    await navigateAfterAuth(navigate, role);
   }, [navigate]);
 
   const handleGoogleCredential = useCallback(

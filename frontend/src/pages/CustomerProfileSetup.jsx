@@ -1,87 +1,101 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { completeCustomerProfile, getProfile, tryPasswordUpdateIfFilled } from "../api/profile";
+import AuthLayout from "../components/auth/AuthLayout";
+import AuthField from "../components/auth/AuthField";
+import PasswordUpdateFields from "../components/PasswordUpdateFields";
+import { getHomePathForRole } from "../utils/roleHome";
+import { isCustomerProfileComplete } from "../utils/profileComplete";
 import Input from "../components/Input";
 import Button from "../components/Button";
-import PasswordUpdateFields from "../components/PasswordUpdateFields";
 import styles from "./pages.module.css";
-
-const emptyPlaceholders = {
-  username: "",
-  phone: "",
-  street: "",
-  city: "",
-  state: "",
-  postalCode: "",
-};
-
-function pick(prev, current) {
-  const c = String(current ?? "").trim();
-  if (c) return c;
-  return String(prev ?? "").trim();
-}
 
 function CustomerProfileSetup() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const onboarding = location.state?.onboarding === true;
+
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
   const [street, setStreet] = useState("");
   const [city, setCity] = useState("");
   const [state, setStateVal] = useState("");
   const [postalCode, setPostalCode] = useState("");
-  const [placeholders, setPlaceholders] = useState(emptyPlaceholders);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     getProfile()
       .then(({ profile }) => {
-        if (cancelled || !profile) return;
-        const addr = profile.addresses?.[0];
-        setPlaceholders({
-          username: profile.username ?? "",
-          phone: profile.phone ?? "",
-          street: addr?.street ?? "",
-          city: addr?.city ?? "",
-          state: addr?.state ?? "",
-          postalCode: addr?.postalCode ?? "",
-        });
+        if (cancelled) return;
+        if (profile) {
+          const addr = profile.addresses?.[0];
+          setUsername(profile.username ?? "");
+          setPhone(profile.phone ?? "");
+          setStreet(addr?.street ?? "");
+          setCity(addr?.city ?? "");
+          setStateVal(addr?.state ?? "");
+          setPostalCode(addr?.postalCode ?? "");
+          if (!onboarding && isCustomerProfileComplete(profile)) {
+            navigate(getHomePathForRole("customer"), { replace: true });
+          }
+        }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setChecking(false);
+      });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [navigate, onboarding]);
+
+  const validate = () => {
+    if (!username.trim()) return "Username is required.";
+    if (!phone.trim()) return "Phone is required.";
+    if (!street.trim()) return "Street address is required.";
+    if (!city.trim()) return "City is required.";
+    if (!state.trim()) return "State is required.";
+    if (!postalCode.trim()) return "Postal code is required.";
+    return null;
+  };
 
   const handleSubmit = async (event) => {
-    if (event && event.preventDefault) event.preventDefault();
+    if (event?.preventDefault) event.preventDefault();
     setError("");
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setLoading(true);
     try {
-      await tryPasswordUpdateIfFilled({
-        currentPassword,
-        newPassword,
-        confirmPassword,
-      });
-      const addresses = [
-        {
-          label: "Home",
-          street: pick(placeholders.street, street),
-          city: pick(placeholders.city, city),
-          state: pick(placeholders.state, state),
-          postalCode: pick(placeholders.postalCode, postalCode),
-        },
-      ];
+      if (!onboarding) {
+        await tryPasswordUpdateIfFilled({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        });
+      }
       await completeCustomerProfile({
-        username: pick(placeholders.username, username),
-        phone: pick(placeholders.phone, phone),
-        addresses,
+        username: username.trim(),
+        phone: phone.trim(),
+        addresses: [
+          {
+            label: "Home",
+            street: street.trim(),
+            city: city.trim(),
+            state: state.trim(),
+            postalCode: postalCode.trim(),
+          },
+        ],
       });
-      navigate("/dashboard");
+      navigate(getHomePathForRole("customer"), { replace: true });
     } catch (err) {
       setError(err.message || "Could not save profile");
     } finally {
@@ -89,56 +103,107 @@ function CustomerProfileSetup() {
     }
   };
 
+  if (checking) {
+    return (
+      <div className={styles.page}>
+        <p className={styles.hint}>Loading…</p>
+      </div>
+    );
+  }
+
+  const addressFields = (
+    <>
+      <AuthField
+        id="street"
+        label="Street"
+        type="text"
+        icon="home"
+        value={street}
+        onChange={(e) => setStreet(e.target.value)}
+        placeholder="123 Main St"
+        required
+      />
+      <AuthField
+        id="city"
+        label="City"
+        type="text"
+        icon="location_city"
+        value={city}
+        onChange={(e) => setCity(e.target.value)}
+        required
+      />
+      <AuthField
+        id="state"
+        label="State"
+        type="text"
+        icon="map"
+        value={state}
+        onChange={(e) => setStateVal(e.target.value)}
+        required
+      />
+      <AuthField
+        id="postalCode"
+        label="Postal code"
+        type="text"
+        icon="markunread_mailbox"
+        value={postalCode}
+        onChange={(e) => setPostalCode(e.target.value)}
+        required
+      />
+    </>
+  );
+
+  if (onboarding) {
+    return (
+      <AuthLayout
+        title="Complete your profile"
+        subtitle="Tell us a bit about yourself so your dashboard and orders work correctly."
+        heroIcon="person"
+        showBack={false}
+      >
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <AuthField
+            id="username"
+            label="Username"
+            type="text"
+            icon="badge"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+          <AuthField
+            id="phone"
+            label="Phone"
+            type="tel"
+            icon="call"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            required
+          />
+          {addressFields}
+          {error ? <div className="auth-alert-error">{error}</div> : null}
+          <button type="submit" className="auth-submit" disabled={loading}>
+            {loading ? "Saving…" : "Continue to dashboard"}
+            <span className="material-symbols-outlined" aria-hidden>
+              arrow_forward
+            </span>
+          </button>
+        </form>
+      </AuthLayout>
+    );
+  }
+
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>Customer profile</h1>
       <form onSubmit={handleSubmit}>
-        <button type="submit" className={styles.srSubmit} aria-hidden tabIndex={-1}>
-          Submit
-        </button>
-        <Input
-          label="Username"
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder={placeholders.username}
-        />
-        <Input
-          label="Phone"
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder={placeholders.phone}
-        />
+        <Input label="Username *" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+        <Input label="Phone *" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required />
         <p className={styles.hint}>Address</p>
-        <Input
-          label="Street"
-          type="text"
-          value={street}
-          onChange={(e) => setStreet(e.target.value)}
-          placeholder={placeholders.street}
-        />
-        <Input
-          label="City"
-          type="text"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          placeholder={placeholders.city}
-        />
-        <Input
-          label="State"
-          type="text"
-          value={state}
-          onChange={(e) => setStateVal(e.target.value)}
-          placeholder={placeholders.state}
-        />
-        <Input
-          label="Postal code"
-          type="text"
-          value={postalCode}
-          onChange={(e) => setPostalCode(e.target.value)}
-          placeholder={placeholders.postalCode}
-        />
+        <Input label="Street *" type="text" value={street} onChange={(e) => setStreet(e.target.value)} required />
+        <Input label="City *" type="text" value={city} onChange={(e) => setCity(e.target.value)} required />
+        <Input label="State *" type="text" value={state} onChange={(e) => setStateVal(e.target.value)} required />
+        <Input label="Postal code *" type="text" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} required />
         <PasswordUpdateFields
           currentPassword={currentPassword}
           onCurrentPasswordChange={setCurrentPassword}
@@ -149,17 +214,8 @@ function CustomerProfileSetup() {
         />
         {error ? <div className={styles.error}>{error}</div> : null}
         <div className={styles.actions}>
-          <Button
-            text="Back to dashboard"
-            variant="secondary"
-            onClick={() => navigate("/dashboard")}
-            disabled={false}
-          />
-          <Button
-            text={loading ? "Saving..." : "Complete profile"}
-            disabled={loading}
-            onClick={handleSubmit}
-          />
+          <Button text="Back to dashboard" variant="secondary" onClick={() => navigate("/dashboard")} disabled={false} />
+          <Button text={loading ? "Saving..." : "Save profile"} disabled={loading} onClick={handleSubmit} />
         </div>
       </form>
     </div>
