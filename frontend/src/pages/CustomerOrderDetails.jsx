@@ -3,11 +3,22 @@ import { Link, useParams } from "react-router-dom";
 import { getOrder } from "../api/orders";
 import { getRestaurant } from "../api/restaurant";
 import { connectSocket } from "../socket";
-import styles from "./pages.module.css";
+import CustomerLayout from "../components/customer/CustomerLayout";
+import "../components/customer/customer-dashboard.css";
 
 function formatDate(iso) {
   if (!iso) return "—";
   return new Date(iso).toLocaleString();
+}
+
+function statusBadgeClass(status) {
+  const key = (status || "").toLowerCase().replace(/-/g, "_");
+  return `cd-badge cd-badge-${key}`;
+}
+
+function statusLabel(status) {
+  if (!status) return "—";
+  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function CustomerOrderDetails() {
@@ -70,64 +81,72 @@ function CustomerOrderDetails() {
   }, [id]);
 
   return (
-    <div className={styles.page}>
-      <p className={styles.hint}>
-        <Link to="/customer/orders">← All orders</Link>
-      </p>
-      {error ? <div className={styles.error}>{error}</div> : null}
+    <CustomerLayout>
+      <div className="cd-page-header">
+        <div>
+          <h1 className="cd-page-title">Order #{String(id).slice(-6)}</h1>
+          {order ? (
+            <p className="cd-page-subtitle">
+              <span className={statusBadgeClass(order.status)} style={{ marginRight: "0.5rem" }}>
+                {statusLabel(order.status)}
+              </span>
+              Placed {formatDate(order.createdAt)}
+            </p>
+          ) : null}
+        </div>
+        <Link to="/customer/orders" className="cd-btn-outline">
+          <span className="material-symbols-outlined">arrow_back</span>
+          All orders
+        </Link>
+      </div>
+
+      {error ? <div className="cd-alert-error">{error}</div> : null}
+
       {loading ? (
-        <p className={styles.hint}>Loading…</p>
+        <p className="cd-empty">Loading order…</p>
       ) : order ? (
-        <>
-          <h1 className={styles.title}>Order {String(order._id).slice(-6)}</h1>
-          <p>
-            <strong>Status:</strong> {order.status}
-          </p>
+        <div className="cd-panel" style={{ maxWidth: "40rem" }}>
           {restaurant ? (
-            <section style={{ marginTop: "1rem" }}>
-              <h2 className={styles.title} style={{ fontSize: "1.125rem" }}>
-                Restaurant
-              </h2>
-              <p className={styles.hint}>
+            <div style={{ padding: "1.25rem 1.5rem", borderBottom: "1px solid #f5f5f5" }}>
+              <h3 className="cd-panel-title">Restaurant</h3>
+              <p className="cd-order-meta" style={{ marginTop: "0.5rem" }}>
                 <strong>{restaurant.name}</strong>
                 {restaurant.location ? ` · ${restaurant.location}` : ""}
-                {restaurant.status ? ` · ${restaurant.status}` : ""}
               </p>
-            </section>
-          ) : (
-            <p className={styles.hint} style={{ marginTop: "1rem" }}>
-              Restaurant ID: {String(order.restaurantId)}
-            </p>
-          )}
-          <section style={{ marginTop: "1rem" }}>
-            <h2 className={styles.title} style={{ fontSize: "1.125rem" }}>
-              Items
-            </h2>
-            <ul style={{ listStyle: "none", padding: 0 }}>
+            </div>
+          ) : null}
+          <div style={{ padding: "1.25rem 1.5rem" }}>
+            <h3 className="cd-panel-title">Items</h3>
+            <ul className="cd-order-list" style={{ marginTop: "0.75rem" }}>
               {(order.items || []).map((line, index) => (
                 <li
                   key={`${line.menuItemId}-${index}`}
-                  style={{
-                    borderBottom: "1px solid #d6d3d1",
-                    padding: "0.5rem 0",
-                  }}
+                  className="cd-order-item"
+                  style={{ cursor: "default", paddingLeft: 0, paddingRight: 0 }}
                 >
-                  {line.name} × {line.quantity} — $
-                  {(Number(line.price) * line.quantity).toFixed(2)}
+                  <div>
+                    <p className="cd-order-name">
+                      {line.name} × {line.quantity}
+                    </p>
+                    <p className="cd-order-meta">
+                      ${(Number(line.price) * line.quantity).toFixed(2)}
+                    </p>
+                  </div>
                 </li>
               ))}
             </ul>
-          </section>
-          <p style={{ marginTop: "1rem" }}>
-            <strong>Total:</strong> ${Number(order.totalAmount).toFixed(2)}
-          </p>
-          <p className={styles.hint}>Placed {formatDate(order.createdAt)}</p>
-          <p className={styles.hint}>Last updated {formatDate(order.updatedAt)}</p>
-        </>
+            <p className="cd-order-name" style={{ marginTop: "1.25rem" }}>
+              Total: ${Number(order.totalAmount).toFixed(2)}
+            </p>
+            <p className="cd-order-meta" style={{ marginTop: "0.5rem" }}>
+              Last updated {formatDate(order.updatedAt)}
+            </p>
+          </div>
+        </div>
       ) : !error ? (
-        <p className={styles.hint}>Order not found.</p>
+        <p className="cd-empty">Order not found.</p>
       ) : null}
-    </div>
+    </CustomerLayout>
   );
 }
 

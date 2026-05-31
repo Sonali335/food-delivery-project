@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAllRestaurants } from "../api/restaurant";
-import styles from "./pages.module.css";
+import CustomerLayout from "../components/customer/CustomerLayout";
+import "../components/customer/customer-dashboard.css";
 
 function CustomerRestaurants() {
   const [restaurants, setRestaurants] = useState([]);
@@ -28,49 +29,45 @@ function CustomerRestaurants() {
   }, []);
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Restaurants</h1>
-      <p className={styles.hint}>
-        <Link to="/dashboard">Back to dashboard</Link>
-      </p>
-      {error ? <div className={styles.error}>{error}</div> : null}
-      {loading ? (
-        <p className={styles.hint}>Loading…</p>
-      ) : restaurants.length === 0 ? (
-        <p className={styles.hint}>No restaurants available.</p>
-      ) : (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {restaurants.map((r) => (
-            <li
-              key={r.id}
-              style={{
-                borderBottom: "1px solid #d6d3d1",
-                padding: "0.75rem 0",
-              }}
-            >
-              <Link to={`/customer/restaurant/${r.id}`}>
-                <strong>{r.name}</strong>
+    <CustomerLayout>
+      <div className="cd-page-header">
+        <div>
+          <h1 className="cd-page-title">Browse restaurants</h1>
+          <p className="cd-page-subtitle">Pick a restaurant and add items to your cart.</p>
+        </div>
+        <Link to="/customer/dashboard" className="cd-btn-outline">
+          <span className="material-symbols-outlined">dashboard</span>
+          Dashboard
+        </Link>
+      </div>
+
+      {error ? <div className="cd-alert-error">{error}</div> : null}
+
+      <div className="cd-panel">
+        {loading ? (
+          <p className="cd-empty">Loading restaurants…</p>
+        ) : restaurants.length === 0 ? (
+          <p className="cd-empty">No restaurants available right now.</p>
+        ) : (
+          <div className="cd-restaurant-grid" style={{ padding: "1.5rem" }}>
+            {restaurants.map((r) => (
+              <Link key={r.id} to={`/customer/restaurant/${r.id}`} className="cd-restaurant-card">
+                {r.image ? <img src={r.image} alt="" /> : null}
+                <div className="cd-restaurant-card-body">
+                  <h4>{r.name}</h4>
+                  <p>
+                    {r.location}
+                    {r.cuisine ? ` · ${r.cuisine}` : ""}
+                    {r.rating != null ? ` · ★ ${r.rating}` : ""}
+                    {r.status ? ` · ${r.status}` : ""}
+                  </p>
+                </div>
               </Link>
-              <div className={styles.hint} style={{ marginTop: "0.25rem" }}>
-                {r.location}
-                {r.cuisine ? ` · ${r.cuisine}` : ""}
-                {r.rating != null ? ` · ★ ${r.rating}` : ""}
-                {r.status ? ` · ${r.status}` : ""}
-              </div>
-              {r.image ? (
-                <img
-                  src={r.image}
-                  alt=""
-                  width={80}
-                  height={56}
-                  style={{ objectFit: "cover", borderRadius: 4, marginTop: "0.5rem" }}
-                />
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </CustomerLayout>
   );
 }
 

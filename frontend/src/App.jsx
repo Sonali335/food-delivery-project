@@ -17,6 +17,7 @@ import MenuList from "./pages/MenuList";
 import MenuCreate from "./pages/MenuCreate";
 import MenuEdit from "./pages/MenuEdit";
 import CategoryManager from "./pages/CategoryManager";
+import CustomerDashboard from "./pages/CustomerDashboard";
 import CustomerRestaurants from "./pages/CustomerRestaurants";
 import CustomerRestaurantMenu from "./pages/CustomerRestaurantMenu";
 import CustomerOrders from "./pages/CustomerOrders";
@@ -131,6 +132,14 @@ function App() {
         }
       />
 
+      <Route
+        path="/customer/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["customer"]} requireCompleteProfile>
+            <CustomerDashboard />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/customer/restaurants"
         element={

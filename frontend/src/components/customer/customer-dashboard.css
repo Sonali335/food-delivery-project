@@ -1,0 +1,596 @@
+/* Customer dashboard — aligned with restaurant/driver portal */
+
+.cd-shell {
+  min-height: 100vh;
+  background: #f8f9ff;
+  color: #121c2a;
+  font-family: "Work Sans", system-ui, sans-serif;
+}
+
+.cd-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  background: #fff;
+  border-bottom: 1px solid #f5f5f5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+@media (min-width: 1024px) {
+  .cd-topbar {
+    padding: 0 2rem;
+  }
+}
+
+.cd-topbar-brand {
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #006c49;
+  letter-spacing: -0.02em;
+}
+
+.cd-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cd-topbar-profile {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  background: #ecfdf5;
+  color: #006c49;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cd-topbar-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.5rem;
+  background: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #404040;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.cd-topbar-logout:hover {
+  background: #fafafa;
+}
+
+.cd-body {
+  display: flex;
+  min-height: 100vh;
+  padding-top: 4rem;
+}
+
+.cd-sidebar {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 18rem;
+  flex-direction: column;
+  padding: 5rem 0 1.5rem;
+  background: #fff;
+  border-right: 1px solid #f5f5f5;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+  z-index: 40;
+}
+
+@media (min-width: 768px) {
+  .cd-sidebar {
+    display: flex;
+  }
+}
+
+.cd-sidebar-user {
+  padding: 0 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cd-sidebar-icon-wrap {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  background: #ecfdf5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #006c49;
+  flex-shrink: 0;
+}
+
+.cd-sidebar-name {
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.cd-sidebar-role {
+  font-size: 0.75rem;
+  color: #737373;
+  margin: 0.125rem 0 0;
+}
+
+.cd-nav {
+  flex: 1;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cd-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #525252;
+  text-decoration: none;
+  transition: background 0.2s, padding-left 0.2s;
+}
+
+.cd-nav-link:hover {
+  background: #fafafa;
+  padding-left: 1.25rem;
+}
+
+.cd-nav-link-active {
+  background: #ecfdf5;
+  color: #047857;
+  border-right: 4px solid #006c49;
+}
+
+.cd-sidebar-footer {
+  padding: 1.5rem 1.5rem 0;
+  margin-top: auto;
+  border-top: 1px solid #fafafa;
+}
+
+.cd-sidebar-tip {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+}
+
+.cd-sidebar-tip-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #006c49;
+  margin: 0 0 0.25rem;
+}
+
+.cd-sidebar-tip-text {
+  font-size: 0.625rem;
+  color: rgba(0, 108, 73, 0.75);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.cd-main {
+  flex: 1;
+  padding: 1.5rem;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .cd-main {
+    margin-left: 18rem;
+    padding: 2rem 2.5rem;
+  }
+}
+
+.cd-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .cd-page-header {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+.cd-page-title {
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.25rem;
+}
+
+.cd-page-subtitle {
+  font-size: 1rem;
+  color: #737373;
+  margin: 0;
+}
+
+.cd-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: #006c49;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 4px 12px rgba(0, 108, 73, 0.25);
+  text-decoration: none;
+}
+
+.cd-btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.cd-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.5rem;
+  background: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #404040;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.cd-alert-error {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: #ffdad6;
+  color: #93000a;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.cd-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .cd-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.cd-stat-card {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid #fafafa;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.cd-stat-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.cd-stat-icon-green {
+  background: #ecfdf5;
+  color: #006c49;
+}
+
+.cd-stat-icon-amber {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.cd-stat-icon-blue {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.cd-stat-label {
+  font-size: 0.875rem;
+  color: #737373;
+  margin: 0 0 0.25rem;
+}
+
+.cd-stat-value {
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.cd-stat-meta {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #a3a3a3;
+  margin-left: 0.35rem;
+}
+
+.cd-content-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .cd-content-grid {
+    grid-template-columns: 1fr 18rem;
+  }
+}
+
+.cd-panel {
+  background: #fff;
+  border-radius: 0.75rem;
+  border: 1px solid #fafafa;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.cd-panel-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.cd-panel-title {
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.cd-empty {
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: #737373;
+  font-size: 0.875rem;
+}
+
+.cd-order-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cd-order-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #f5f5f5;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
+}
+
+.cd-order-item:hover {
+  background: #fafafa;
+}
+
+.cd-order-item:last-child {
+  border-bottom: none;
+}
+
+.cd-order-name {
+  font-weight: 600;
+  margin: 0 0 0.2rem;
+}
+
+.cd-order-meta {
+  font-size: 0.8125rem;
+  color: #737373;
+  margin: 0;
+}
+
+.cd-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  white-space: nowrap;
+}
+
+.cd-badge-placed,
+.cd-badge-accepted {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.cd-badge-preparing,
+.cd-badge-picked_up {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.cd-badge-delivered {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.cd-badge-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.cd-active-card {
+  background: linear-gradient(135deg, #006c49 0%, #10b981 100%);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  color: #fff;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 108, 73, 0.25);
+}
+
+.cd-active-card h3 {
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+}
+
+.cd-active-card p {
+  margin: 0 0 1rem;
+  opacity: 0.9;
+  font-size: 0.875rem;
+}
+
+.cd-active-card .cd-btn-outline {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.cd-quick-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.cd-quick-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #f5f5f5;
+  background: #fafafa;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #404040;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.cd-quick-link:hover {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+.cd-restaurant-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .cd-restaurant-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.cd-restaurant-card {
+  border: 1px solid #f5f5f5;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.2s;
+}
+
+.cd-restaurant-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.cd-restaurant-card img {
+  width: 100%;
+  height: 7rem;
+  object-fit: cover;
+}
+
+.cd-restaurant-card-body {
+  padding: 0.875rem 1rem;
+}
+
+.cd-restaurant-card-body h4 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.cd-restaurant-card-body p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #737373;
+}
+
+.cd-form-panel {
+  background: #fff;
+  border-radius: 0.75rem;
+  border: 1px solid #fafafa;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  max-width: 40rem;
+}
+
+.cd-form-field {
+  margin-bottom: 1rem;
+}
+
+.cd-form-field label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #525252;
+  margin-bottom: 0.35rem;
+}
+
+.cd-form-field input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.5rem;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.cd-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}

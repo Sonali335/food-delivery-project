@@ -3,8 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { getRestaurant } from "../api/restaurant";
 import { getMenuByRestaurant } from "../api/menu";
 import { createOrder } from "../api/orders";
-import Button from "../components/Button";
-import styles from "./pages.module.css";
+import CustomerLayout from "../components/customer/CustomerLayout";
+import "../components/customer/customer-dashboard.css";
 
 function CustomerRestaurantMenu() {
   const { id } = useParams();
@@ -91,118 +91,116 @@ function CustomerRestaurantMenu() {
   };
 
   return (
-    <div className={styles.page}>
-      <p className={styles.hint}>
-        <Link to="/customer/restaurants">← All restaurants</Link>
-      </p>
-      {error ? <div className={styles.error}>{error}</div> : null}
-      {loading ? (
-        <p className={styles.hint}>Loading…</p>
-      ) : restaurant ? (
-        <>
-          <h1 className={styles.title}>{restaurant.name}</h1>
-          <p className={styles.hint}>
-            {restaurant.location}
-            {restaurant.cuisine ? ` · ${restaurant.cuisine}` : ""}
-            {restaurant.rating != null ? ` · ★ ${restaurant.rating}` : ""}
-            {restaurant.status ? ` · ${restaurant.status}` : ""}
-          </p>
-          {restaurant.image ? (
-            <img
-              src={restaurant.image}
-              alt=""
-              width={120}
-              height={80}
-              style={{ objectFit: "cover", borderRadius: 4, marginBottom: "1rem" }}
-            />
+    <CustomerLayout>
+      <div className="cd-page-header">
+        <div>
+          <h1 className="cd-page-title">{restaurant?.name || "Restaurant"}</h1>
+          {restaurant ? (
+            <p className="cd-page-subtitle">
+              {restaurant.location}
+              {restaurant.cuisine ? ` · ${restaurant.cuisine}` : ""}
+              {restaurant.rating != null ? ` · ★ ${restaurant.rating}` : ""}
+            </p>
           ) : null}
-          <h2 className={styles.title} style={{ fontSize: "1.125rem" }}>
-            Menu
-          </h2>
-          {items.length === 0 ? (
-            <p className={styles.hint}>No menu items available.</p>
-          ) : (
-            <ul style={{ listStyle: "none", padding: 0 }}>
-              {items.map((item) => (
-                <li
-                  key={item.itemId}
-                  style={{
-                    borderBottom: "1px solid #d6d3d1",
-                    padding: "0.75rem 0",
-                    display: "flex",
-                    gap: "0.75rem",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt=""
-                      width={56}
-                      height={56}
-                      style={{ objectFit: "cover", borderRadius: 4, flexShrink: 0 }}
-                    />
-                  ) : null}
-                  <div style={{ flex: 1 }}>
-                    <strong>{item.name}</strong>
-                    {item.category ? (
-                      <span className={styles.hint}> · {item.category}</span>
-                    ) : null}
-                    <div className={styles.hint}>{item.description}</div>
-                    <div>${Number(item.price).toFixed(2)}</div>
-                    <div style={{ marginTop: "0.5rem" }}>
-                      <Button
-                        text="Add to Cart"
-                        onClick={() => addToCart(item)}
-                        disabled={false}
-                      />
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+        </div>
+        <Link to="/customer/restaurants" className="cd-btn-outline">
+          <span className="material-symbols-outlined">arrow_back</span>
+          All restaurants
+        </Link>
+      </div>
 
-          <section style={{ marginTop: "1.5rem" }}>
-            <h2 className={styles.title} style={{ fontSize: "1.125rem" }}>
-              Cart
-            </h2>
+      {error ? <div className="cd-alert-error">{error}</div> : null}
+
+      {loading ? (
+        <p className="cd-empty">Loading menu…</p>
+      ) : restaurant ? (
+        <div className="cd-content-grid" style={{ gridTemplateColumns: "1fr" }}>
+          <div className="cd-panel">
+            <div className="cd-panel-header">
+              <h3 className="cd-panel-title">Menu</h3>
+            </div>
+            {items.length === 0 ? (
+              <p className="cd-empty">No menu items available.</p>
+            ) : (
+              <ul className="cd-order-list">
+                {items.map((item) => (
+                  <li key={item.itemId} className="cd-order-item" style={{ cursor: "default" }}>
+                    <div style={{ display: "flex", gap: "0.75rem", flex: 1 }}>
+                      {item.image ? (
+                        <img
+                          src={item.image}
+                          alt=""
+                          width={56}
+                          height={56}
+                          style={{ objectFit: "cover", borderRadius: 8, flexShrink: 0 }}
+                        />
+                      ) : null}
+                      <div>
+                        <p className="cd-order-name">{item.name}</p>
+                        <p className="cd-order-meta">
+                          {item.category ? `${item.category} · ` : ""}
+                          {item.description || ""}
+                        </p>
+                        <p className="cd-order-meta">${Number(item.price).toFixed(2)}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="cd-btn-primary"
+                      style={{ flexShrink: 0 }}
+                      onClick={() => addToCart(item)}
+                    >
+                      Add
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="cd-panel">
+            <div className="cd-panel-header">
+              <h3 className="cd-panel-title">Your cart</h3>
+            </div>
             {cart.length === 0 ? (
-              <p className={styles.hint}>Your cart is empty.</p>
+              <p className="cd-empty">Your cart is empty.</p>
             ) : (
               <>
-                <ul style={{ listStyle: "none", padding: 0 }}>
+                <ul className="cd-order-list">
                   {cart.map((line) => (
-                    <li
-                      key={line.menuItemId}
-                      style={{
-                        borderBottom: "1px solid #d6d3d1",
-                        padding: "0.5rem 0",
-                      }}
-                    >
-                      {line.name} × {line.quantity} — $
-                      {(Number(line.price) * line.quantity).toFixed(2)}
+                    <li key={line.menuItemId} className="cd-order-item" style={{ cursor: "default" }}>
+                      <div>
+                        <p className="cd-order-name">
+                          {line.name} × {line.quantity}
+                        </p>
+                        <p className="cd-order-meta">
+                          ${(Number(line.price) * line.quantity).toFixed(2)}
+                        </p>
+                      </div>
                     </li>
                   ))}
                 </ul>
-                <p style={{ marginTop: "0.75rem" }}>
-                  <strong>Total: ${cartTotal.toFixed(2)}</strong>
-                </p>
-                <div className={styles.actions}>
-                  <Button
-                    text={placing ? "Placing order…" : "Place Order"}
-                    onClick={handlePlaceOrder}
+                <div style={{ padding: "1rem 1.5rem 1.5rem" }}>
+                  <p className="cd-order-name" style={{ marginBottom: "1rem" }}>
+                    Total: ${cartTotal.toFixed(2)}
+                  </p>
+                  <button
+                    type="button"
+                    className="cd-btn-primary"
                     disabled={placing}
-                  />
+                    onClick={handlePlaceOrder}
+                  >
+                    {placing ? "Placing order…" : "Place order"}
+                  </button>
                 </div>
               </>
             )}
-          </section>
-        </>
+          </div>
+        </div>
       ) : !error ? (
-        <p className={styles.hint}>Restaurant not found.</p>
+        <p className="cd-empty">Restaurant not found.</p>
       ) : null}
-    </div>
+    </CustomerLayout>
   );
 }
 

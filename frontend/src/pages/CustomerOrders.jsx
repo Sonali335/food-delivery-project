@@ -3,11 +3,22 @@ import { Link } from "react-router-dom";
 import { getCustomerOrders } from "../api/orders";
 import { getAllRestaurants } from "../api/restaurant";
 import { connectSocket } from "../socket";
-import styles from "./pages.module.css";
+import CustomerLayout from "../components/customer/CustomerLayout";
+import "../components/customer/customer-dashboard.css";
 
 function formatDate(iso) {
   if (!iso) return "—";
   return new Date(iso).toLocaleString();
+}
+
+function statusBadgeClass(status) {
+  const key = (status || "").toLowerCase().replace(/-/g, "_");
+  return `cd-badge cd-badge-${key}`;
+}
+
+function statusLabel(status) {
+  if (!status) return "—";
+  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function restaurantNameFor(order, nameById) {
@@ -69,41 +80,50 @@ function CustomerOrders() {
   }, []);
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>My orders</h1>
-      <p className={styles.hint}>
-        <Link to="/customer/restaurants">Browse restaurants</Link>
-        {" · "}
-        <Link to="/dashboard">Dashboard</Link>
-      </p>
-      {error ? <div className={styles.error}>{error}</div> : null}
-      {loading ? (
-        <p className={styles.hint}>Loading…</p>
-      ) : orders.length === 0 ? (
-        <p className={styles.hint}>No orders yet.</p>
-      ) : (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {orders.map((order) => (
-            <li
-              key={order._id}
-              style={{
-                borderBottom: "1px solid #d6d3d1",
-                padding: "0.75rem 0",
-              }}
-            >
-              <Link to={`/customer/orders/${order._id}`}>
-                <strong>Order {String(order._id).slice(-6)}</strong>
-              </Link>
-              <div className={styles.hint} style={{ marginTop: "0.25rem" }}>
-                {restaurantNameFor(order, nameById)} · {order.status} · $
-                {Number(order.totalAmount).toFixed(2)}
-              </div>
-              <div className={styles.hint}>Placed {formatDate(order.createdAt)}</div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <CustomerLayout>
+      <div className="cd-page-header">
+        <div>
+          <h1 className="cd-page-title">My orders</h1>
+          <p className="cd-page-subtitle">Track status and view order details.</p>
+        </div>
+        <Link to="/customer/restaurants" className="cd-btn-primary">
+          <span className="material-symbols-outlined">add</span>
+          New order
+        </Link>
+      </div>
+
+      {error ? <div className="cd-alert-error">{error}</div> : null}
+
+      <div className="cd-panel">
+        {loading ? (
+          <p className="cd-empty">Loading orders…</p>
+        ) : orders.length === 0 ? (
+          <p className="cd-empty">
+            No orders yet.{" "}
+            <Link to="/customer/restaurants">Browse restaurants</Link>
+          </p>
+        ) : (
+          <ul className="cd-order-list">
+            {orders.map((order) => (
+              <li key={order._id}>
+                <Link to={`/customer/orders/${order._id}`} className="cd-order-item">
+                  <div>
+                    <p className="cd-order-name">Order #{String(order._id).slice(-6)}</p>
+                    <p className="cd-order-meta">
+                      {restaurantNameFor(order, nameById)} · $
+                      {Number(order.totalAmount).toFixed(2)} · Placed {formatDate(order.createdAt)}
+                    </p>
+                  </div>
+                  <span className={statusBadgeClass(order.status)}>
+                    {statusLabel(order.status)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </CustomerLayout>
   );
 }
 

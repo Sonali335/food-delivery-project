@@ -135,7 +135,8 @@ There is no separate “check your email” step; after submitting email you go 
 | `/setup/customer` | customer | Profile setup |
 | `/setup/driver` | driver | Profile setup |
 | `/setup/restaurant` | restaurant | Profile setup |
-| `/dashboard` | any | General dashboard |
+| `/dashboard` | any | Redirects to role home |
+| `/customer/dashboard` | customer | Customer dashboard |
 | `/customer/restaurants` | customer | Browse restaurants |
 | `/customer/restaurant/:id` | customer | Menu & order |
 | `/customer/orders` | customer | Order list |

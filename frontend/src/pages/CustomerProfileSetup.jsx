@@ -3,11 +3,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { completeCustomerProfile, getProfile, tryPasswordUpdateIfFilled } from "../api/profile";
 import AuthLayout from "../components/auth/AuthLayout";
 import AuthField from "../components/auth/AuthField";
+import CustomerLayout from "../components/customer/CustomerLayout";
+import "../components/customer/customer-dashboard.css";
 import PasswordUpdateFields from "../components/PasswordUpdateFields";
 import { getHomePathForRole } from "../utils/roleHome";
 import { isCustomerProfileComplete } from "../utils/profileComplete";
-import Input from "../components/Input";
-import Button from "../components/Button";
 import styles from "./pages.module.css";
 
 function CustomerProfileSetup() {
@@ -194,31 +194,60 @@ function CustomerProfileSetup() {
   }
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>Customer profile</h1>
-      <form onSubmit={handleSubmit}>
-        <Input label="Username *" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
-        <Input label="Phone *" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required />
-        <p className={styles.hint}>Address</p>
-        <Input label="Street *" type="text" value={street} onChange={(e) => setStreet(e.target.value)} required />
-        <Input label="City *" type="text" value={city} onChange={(e) => setCity(e.target.value)} required />
-        <Input label="State *" type="text" value={state} onChange={(e) => setStateVal(e.target.value)} required />
-        <Input label="Postal code *" type="text" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} required />
-        <PasswordUpdateFields
-          currentPassword={currentPassword}
-          onCurrentPasswordChange={setCurrentPassword}
-          newPassword={newPassword}
-          onNewPasswordChange={setNewPassword}
-          confirmPassword={confirmPassword}
-          onConfirmPasswordChange={setConfirmPassword}
-        />
-        {error ? <div className={styles.error}>{error}</div> : null}
-        <div className={styles.actions}>
-          <Button text="Back to dashboard" variant="secondary" onClick={() => navigate("/dashboard")} disabled={false} />
-          <Button text={loading ? "Saving..." : "Save profile"} disabled={loading} onClick={handleSubmit} />
+    <CustomerLayout>
+      <div className="cd-page-header">
+        <div>
+          <h1 className="cd-page-title">Profile settings</h1>
+          <p className="cd-page-subtitle">Update your delivery details and password.</p>
         </div>
-      </form>
-    </div>
+      </div>
+      <div className="cd-form-panel">
+        <form onSubmit={handleSubmit}>
+          <div className="cd-form-field">
+            <label htmlFor="username">Username *</label>
+            <input id="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+          </div>
+          <div className="cd-form-field">
+            <label htmlFor="phone">Phone *</label>
+            <input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+          </div>
+          <p className="cd-order-meta" style={{ marginBottom: "0.75rem", fontWeight: 600 }}>Address</p>
+          <div className="cd-form-field">
+            <label htmlFor="street">Street *</label>
+            <input id="street" type="text" value={street} onChange={(e) => setStreet(e.target.value)} required />
+          </div>
+          <div className="cd-form-field">
+            <label htmlFor="city">City *</label>
+            <input id="city" type="text" value={city} onChange={(e) => setCity(e.target.value)} required />
+          </div>
+          <div className="cd-form-field">
+            <label htmlFor="state">State *</label>
+            <input id="state" type="text" value={state} onChange={(e) => setStateVal(e.target.value)} required />
+          </div>
+          <div className="cd-form-field">
+            <label htmlFor="postalCode">Postal code *</label>
+            <input id="postalCode" type="text" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} required />
+          </div>
+          <PasswordUpdateFields
+            currentPassword={currentPassword}
+            onCurrentPasswordChange={setCurrentPassword}
+            newPassword={newPassword}
+            onNewPasswordChange={setNewPassword}
+            confirmPassword={confirmPassword}
+            onConfirmPasswordChange={setConfirmPassword}
+          />
+          {error ? <div className="cd-alert-error">{error}</div> : null}
+          <div className="cd-form-actions">
+            <button type="button" className="cd-btn-outline" onClick={() => navigate("/customer/dashboard")}>
+              Back to dashboard
+            </button>
+            <button type="submit" className="cd-btn-primary" disabled={loading}>
+              {loading ? "Saving…" : "Save changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </CustomerLayout>
   );
 }
 
