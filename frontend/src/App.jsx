@@ -10,6 +10,7 @@ import DriverProfileSetup from "./pages/DriverProfileSetup";
 import RestaurantProfileSetup from "./pages/RestaurantProfileSetup";
 import Dashboard from "./pages/Dashboard";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
+import RestaurantOrderHistory from "./pages/RestaurantOrderHistory";
 import DriverDashboard from "./pages/DriverDashboard";
 import DriverEarnings from "./pages/DriverEarnings";
 import DriverOrderHistory from "./pages/DriverOrderHistory";
@@ -96,6 +97,14 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
             <RestaurantDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/restaurant/orders"
+        element={
+          <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
+            <RestaurantOrderHistory />
           </ProtectedRoute>
         }
       />

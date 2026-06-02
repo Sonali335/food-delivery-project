@@ -80,6 +80,10 @@ function RestaurantShell({
               <span className="material-symbols-outlined">menu_book</span>
               Menu management
             </NavLink>
+            <NavLink to="/restaurant/orders" className={linkClass}>
+              <span className="material-symbols-outlined">list_alt</span>
+              Order history
+            </NavLink>
             <NavLink to="/restaurant/categories" className={linkClass}>
               <span className="material-symbols-outlined">category</span>
               Categories
