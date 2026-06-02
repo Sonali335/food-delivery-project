@@ -27,7 +27,7 @@ function CustomerShell({ customerName, children }) {
   return (
     <div className="cd-shell">
       <header className="cd-topbar">
-        <span className="cd-topbar-brand">GourmetGo</span>
+        <span className="cd-topbar-brand">Food Delivery</span>
         <div className="cd-topbar-actions">
           <span className="cd-topbar-profile" title={displayName}>
             {customerInitials(displayName)}

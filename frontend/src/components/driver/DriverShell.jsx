@@ -34,7 +34,7 @@ function DriverShell({
   return (
     <div className="dd-shell">
       <header className="dd-topbar">
-        <span className="dd-topbar-brand">GourmetGo</span>
+        <span className="dd-topbar-brand">Food Delivery</span>
         <div className="dd-topbar-actions">
           <div className="dd-online-toggle">
             <span className={`dd-online-label ${online ? "" : "dd-online-label-off"}`}>

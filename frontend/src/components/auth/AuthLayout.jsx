@@ -28,7 +28,7 @@ function AuthLayout({
               arrow_back
             </span>
           </button>
-          <span className="auth-brand">GourmetGo</span>
+          <span className="auth-brand">Food Delivery</span>
         </header>
       ) : null}
 

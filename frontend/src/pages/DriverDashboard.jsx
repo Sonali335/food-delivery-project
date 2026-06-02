@@ -31,7 +31,7 @@ function formatItems(items) {
 }
 
 function orderShortId(orderId) {
-  return `#GG-${String(orderId).slice(-4).toUpperCase()}`;
+  return `#FD-${String(orderId).slice(-4).toUpperCase()}`;
 }
 
 function statusBadgeClass(status) {
