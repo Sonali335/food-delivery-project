@@ -13,7 +13,7 @@
 | Document | Scope |
 | -------- | ----- |
 | [`API.md`](API.md) (this file) | Health, auth, profile |
-| [`restaurant.md`](restaurant.md) | Menu, categories, restaurant status (`/api/menu`, `/api/category`, `/api/restaurant`) |
+| [`restaurant.md`](restaurant.md) | Menu, categories, restaurant status & customer browse (`/api/menu`, `/api/category`, `/api/restaurant`) |
 | [`driver.md`](driver.md) | Driver location (`/api/driver`) |
 | [`orders.md`](orders.md) | Order lifecycle (`/api/orders`) |
 
@@ -23,8 +23,8 @@
 | ------ | -------------- |
 | `/api/auth` | Signup, login, OTP, password reset |
 | `/api/customer` | Profile CRUD for all roles |
-| `/api/restaurant` | Restaurant operational status |
-| `/api/menu`, `/api/category` | Restaurant menu and categories |
+| `/api/restaurant` | Restaurant operational status; customer restaurant browse |
+| `/api/menu`, `/api/category` | Restaurant menu management; customer menu browse |
 | `/api/driver` | Driver location |
 | `/api/orders` | Order lifecycle (create, list, status updates) |
 
@@ -82,6 +82,27 @@ Example:
 ```
 API is running...
 ```
+
+---
+
+### GET `/api/health`
+
+**Full path:** `http://localhost:5000/api/health`
+
+**Description:** JSON health check including MongoDB connection state.
+
+**Response**
+
+- Status: **200 OK**
+
+```json
+{
+  "ok": true,
+  "mongo": true
+}
+```
+
+`mongo` is `true` when Mongoose `readyState === 1` (connected).
 
 ---
 
@@ -244,13 +265,16 @@ Mounted in `backend/src/server.js` as `/api/auth` + router paths below.
 
 **Full path:** `http://localhost:5000/api/auth/google`
 
-**Description:** Verifies a **Google ID token** (`google-auth-library`), finds or creates the user by email, ensures the account is not **suspended**, and returns a JWT. New Google users are created as **`customer`**, **`isVerified: true`**, **`accountStatus: "active"`**, with a basic **CustomerProfile** (no OTP). Any **`PendingSignup`** for the same email is removed so it does not block Google sign-in. Existing users with `pending` / unverified state are upgraded to verified + active.
+**Description:** Verifies a **Google ID token** (`google-auth-library`), finds or creates the user by email, ensures the account is not **suspended**, and returns a JWT. New Google users are **`isVerified: true`**, **`accountStatus: "active"`** (no OTP). Any **`PendingSignup`** for the same email is removed so it does not block Google sign-in. Existing users with `pending` / unverified state are upgraded to verified + active.
+
+**New users:** role defaults to **`customer`** unless the client sends a valid **`role`** (`customer`, `driver`, or `restaurant`) — used on the signup page when choosing account type. For new **`customer`** accounts only, a minimal **CustomerProfile** is upserted (`username` from Google display name, `phone: "pending"`, empty `addresses`). Driver/restaurant Google sign-ups do not auto-create those profiles.
 
 **Request body**
 
 | Field      | Type   | Required | Notes                                      |
 |-----------|--------|----------|--------------------------------------------|
 | `idToken` | string | yes      | Credential JWT from Google Identity Services |
+| `role`    | string | no       | One of `customer`, `driver`, `restaurant`; **new users only** |
 
 **Success response**
 
@@ -665,6 +689,7 @@ Mongoose address field validation failures may surface as **500** depending on m
 | Method   | Exact path                                      | Auth | Purpose |
 |----------|-------------------------------------------------|------|---------|
 | `GET`    | `http://localhost:5000/`                        | none | Health (plain text) |
+| `GET`    | `http://localhost:5000/api/health`              | none | Health (JSON + MongoDB state) |
 | `POST`   | `http://localhost:5000/api/auth/signup`           | none | Start email signup (`PendingSignup` + OTP email) |
 | `POST`   | `http://localhost:5000/api/auth/verify-otp`         | none | Verify signup OTP → create `User` |
 | `POST`   | `http://localhost:5000/api/auth/login`              | none | Login + JWT |
@@ -681,9 +706,12 @@ Mongoose address field validation failures may surface as **500** depending on m
 | Method   | Path | Auth | Purpose |
 |----------|------|------|---------|
 | `GET` / `PATCH` | `/api/restaurant/status` | Bearer JWT, role `restaurant` | Read / update operational status |
+| `GET` | `/api/restaurant` | Bearer JWT, role `customer` | List restaurants (browse) |
+| `GET` | `/api/restaurant/:id` | Bearer JWT, role `customer` | Get one restaurant by user `_id` |
 | `POST` / `GET` | `/api/category/` | Bearer JWT, role `restaurant` | Create / list categories |
 | `DELETE` | `/api/category/:id` | Bearer JWT, role `restaurant` | Delete category |
 | `POST` / `GET` | `/api/menu/` | Bearer JWT, role `restaurant` | Create / list menu items |
+| `GET` | `/api/menu/restaurant/:restaurantId` | Bearer JWT, role `customer` | Browse available menu for a restaurant |
 | `GET` / `PATCH` / `DELETE` | `/api/menu/:id` | Bearer JWT, role `restaurant` | Read / update / delete menu item |
 | `POST` | `/api/menu/upload-image` | Bearer JWT, role `restaurant` | Upload menu image (Cloudinary) |
 
@@ -734,6 +762,16 @@ If SMTP is **not** configured, OTP values are **not** emailed; the server logs a
 **Optional Windows DNS override for Node SRV lookups**
 
 - **`MONGO_USE_SYSTEM_DNS=1`** — disables forcing public DNS servers in `server.js`.
+
+**Cloudinary (menu images)**
+
+- **`CLOUDINARY_CLOUD_NAME`**, **`CLOUDINARY_API_KEY`**, **`CLOUDINARY_API_SECRET`** — required for `POST /api/menu/upload-image`.
+
+**Real-time (Socket.io)**
+
+- Shares the same HTTP server and port as the REST API.
+- Clients authenticate with the same JWT via `handshake.auth.token`, query `?token=`, or `Authorization: Bearer`.
+- Order events: see [`orders.md`](orders.md#real-time-updates-socketio).
 
 ---
 

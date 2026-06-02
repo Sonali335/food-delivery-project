@@ -1,19 +1,22 @@
 # Restaurant APIs
 
-These endpoints support **restaurant menu management** and **restaurant status**. They are mounted at `/api/menu`, `/api/category`, and `/api/restaurant` in `server.js`.
+These endpoints support **restaurant menu management**, **restaurant operational status**, and **customer browse** (list restaurants and view a restaurant’s available menu). Mounted at `/api/menu`, `/api/category`, and `/api/restaurant` in `server.js`.
 
 **See also:** [`API.md`](API.md) (auth & profile), [`driver.md`](driver.md) (driver location).
 
 ## Authentication and role
 
-Every route below requires:
+Every route below requires **`Authorization: Bearer <JWT>`**.
 
-1. **Header:** `Authorization: Bearer <JWT>`
-2. **User role:** `restaurant` (enforced by `roleMiddleware(["restaurant"])`)
+| Route group | Required role |
+| ----------- | ------------- |
+| Status, categories, menu CRUD, image upload | `restaurant` |
+| `GET /api/restaurant`, `GET /api/restaurant/:id` | `customer` |
+| `GET /api/menu/restaurant/:restaurantId` | `customer` |
 
-Requests without a valid token receive **401**. Authenticated users with another role receive **403**.
+Requests without a valid token receive **401**. Authenticated users with the wrong role receive **403**.
 
-The authenticated user’s MongoDB `_id` is treated as **`restaurantId`** for menu items and categories, and as **`userId`** when reading or updating `RestaurantProfile` status.
+For **restaurant** routes, the authenticated user’s MongoDB `_id` is **`restaurantId`** on menu items and categories, and **`userId`** on `RestaurantProfile` status. For **customer** browse routes, `:id` / `:restaurantId` is the restaurant user’s `_id` (same value stored on `MenuItem.restaurantId`).
 
 ---
 
@@ -66,6 +69,67 @@ Allowed values: `"open"`, `"closed"`, `"busy"`.
 ```
 
 **Errors:** `400` if `status` is missing or invalid; `404` if profile not found.
+
+---
+
+## Customer browse (restaurants)
+
+Requires JWT with role **`customer`**.
+
+### `GET /api/restaurant`
+
+Lists all restaurants that have a **`RestaurantProfile`**, sorted by `restaurantName` ascending.
+
+**Response (200):**
+
+```json
+{
+  "restaurants": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "name": "Pizza Place",
+      "location": "123 Food Court",
+      "cuisine": null,
+      "rating": 0,
+      "image": null,
+      "status": "open"
+    }
+  ]
+}
+```
+
+| Field | Notes |
+| ----- | ----- |
+| `id` | Restaurant **`User`** `_id` (use as `restaurantId` when ordering or loading menu) |
+| `name` | `restaurantName` from profile |
+| `cuisine` | `cuisineType` or `null` |
+| `rating` | `ratingAverage` (default `0`) |
+| `image` | `image` or `imageUrl` on profile if present, else `null` |
+| `status` | `open` \| `closed` \| `busy` (default `open`) |
+
+---
+
+### `GET /api/restaurant/:id`
+
+Returns one restaurant in the same shape as a list element.
+
+**Response (200):**
+
+```json
+{
+  "restaurant": {
+    "id": "507f1f77bcf86cd799439011",
+    "name": "Pizza Place",
+    "location": "123 Food Court",
+    "cuisine": null,
+    "rating": 0,
+    "image": null,
+    "status": "open"
+  }
+}
+```
+
+**Errors:** `400` invalid ObjectId; `404` no profile for that `userId`.
 
 ---
 
@@ -123,7 +187,40 @@ Deletes a category by MongoDB `_id`.
 
 Menu items reference **`categoryId`**; the category must belong to the same restaurant.
 
-### `POST /api/menu/`
+### `GET /api/menu/restaurant/:restaurantId` (customer)
+
+Returns **available** menu items for the given restaurant (`isAvailable: true`), newest first. Requires role **`customer`**.
+
+**Response (200):**
+
+```json
+{
+  "items": [
+    {
+      "itemId": "507f1f77bcf86cd799439012",
+      "name": "Margherita",
+      "description": "Tomato, mozzarella, basil",
+      "price": 12.99,
+      "image": "https://res.cloudinary.com/.../image.jpg",
+      "category": "Mains"
+    }
+  ]
+}
+```
+
+| Field | Notes |
+| ----- | ----- |
+| `itemId` | Menu item `_id` (use as `menuItemId` when creating an order) |
+| `image` | `imageUrl` or `null` |
+| `category` | Populated category **name**, or `null` |
+
+**Errors:** `400` invalid `restaurantId`.
+
+This shape is optimized for the customer UI; restaurant owners use the full `MenuItem` document from `GET /api/menu/` below.
+
+---
+
+### `POST /api/menu/` (restaurant)
 
 Creates a menu item.
 
@@ -132,7 +229,7 @@ Creates a menu item.
 | Field          | Type    | Required | Notes                                      |
 | -------------- | ------- | -------- | ------------------------------------------ |
 | `name`         | string  | yes      | Trimmed                                    |
-| `price`        | number  | yes      | Must be a valid number                     |
+| `price`        | number  | yes      | Must be a valid number ≥ 0                 |
 | `categoryId`   | string  | yes      | Valid ObjectId; must be your category      |
 | `description`  | string  | no       | Defaults to `""`                           |
 | `imageUrl`     | string  | no       | Optional; empty becomes `null`             |
@@ -148,9 +245,9 @@ Creates a menu item.
 
 ---
 
-### `GET /api/menu/`
+### `GET /api/menu/` (restaurant)
 
-Lists all menu items for this restaurant (newest first). Each item’s `categoryId` is **populated** with `{ _id, name }` for display.
+Lists all menu items for the logged-in restaurant (newest first). Each item’s `categoryId` is **populated** with `{ _id, name }` for display.
 
 **Response (200):**
 
@@ -230,8 +327,20 @@ The value is Cloudinary’s **`secure_url`** (exposed as `url` for the frontend)
 **Errors:**
 
 - `400` if no file (`{ "message": "File is required" }`)
-- `503` if Cloudinary is not configured
+- `503` if Cloudinary is not configured (`"Image upload is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET."`)
 - `500` if the upload fails
+
+Uploaded images are stored under Cloudinary folder **`food-delivery/menu`**.
+
+---
+
+## Frontend clients
+
+| Module | Role | Endpoints |
+| ------ | ---- | --------- |
+| `frontend/src/api/restaurant.js` | restaurant / customer | `getStatus`, `updateStatus`, `getAllRestaurants`, `getRestaurant` |
+| `frontend/src/api/menu.js` | restaurant / customer | `getMenuItems`, `getMenuByRestaurant`, CRUD, `uploadMenuImage` |
+| `frontend/src/api/category.js` | restaurant | category CRUD |
 
 ---
 

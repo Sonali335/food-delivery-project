@@ -170,7 +170,7 @@ Full request/response details: [`backend/doc/API.md`](backend/doc/API.md)
 | Document | Description |
 | -------- | ----------- |
 | [`backend/doc/API.md`](backend/doc/API.md) | Auth, profile, health |
-| [`backend/doc/restaurant.md`](backend/doc/restaurant.md) | Menu, categories, restaurant status |
+| [`backend/doc/restaurant.md`](backend/doc/restaurant.md) | Menu, categories, restaurant status, customer browse |
 | [`backend/doc/driver.md`](backend/doc/driver.md) | Driver location API |
 | [`backend/doc/orders.md`](backend/doc/orders.md) | Order lifecycle API |
 
