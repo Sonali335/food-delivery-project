@@ -328,10 +328,10 @@ function RestaurantDashboard() {
               <button
                 type="button"
                 className="rd-quick-link"
-                onClick={() => navigate("/setup/restaurant")}
+                onClick={() => navigate("/restaurant/settings")}
               >
                 <span className="material-symbols-outlined">settings</span>
-                Profile settings
+                Settings
               </button>
             </div>
           </div>

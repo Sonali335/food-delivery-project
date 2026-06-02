@@ -49,15 +49,35 @@ const completeDriverProfile = async (userId, payload) => {
 };
 
 const completeRestaurantProfile = async (userId, payload) => {
-  const { restaurantName, phone, location } = payload;
+  const { restaurantName, phone, location, cuisineType, openingHours } = payload;
 
   if (!restaurantName || !phone || !location) {
     throw createError("restaurantName, phone, location are required", 400);
   }
 
+  const update = {
+    userId,
+    restaurantName,
+    phone,
+    location,
+  };
+
+  if (cuisineType !== undefined) {
+    update.cuisineType =
+      cuisineType != null && String(cuisineType).trim() !== ""
+        ? String(cuisineType).trim()
+        : null;
+  }
+  if (openingHours !== undefined) {
+    update.openingHours =
+      openingHours != null && String(openingHours).trim() !== ""
+        ? String(openingHours).trim()
+        : null;
+  }
+
   const profile = await RestaurantProfile.findOneAndUpdate(
     { userId },
-    { userId, restaurantName, phone, location },
+    update,
     { new: true, upsert: true, runValidators: true }
   );
 

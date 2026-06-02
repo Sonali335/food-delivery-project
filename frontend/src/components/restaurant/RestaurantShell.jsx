@@ -88,9 +88,9 @@ function RestaurantShell({
               <span className="material-symbols-outlined">category</span>
               Categories
             </NavLink>
-            <NavLink to="/setup/restaurant" className={linkClass}>
+            <NavLink to="/restaurant/settings" className={linkClass}>
               <span className="material-symbols-outlined">settings</span>
-              Profile settings
+              Settings
             </NavLink>
           </nav>
 
