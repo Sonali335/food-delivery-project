@@ -1708,23 +1708,30 @@
   opacity: 0.92;
 }
 
+.rd-set-top-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+@media (min-width: 1024px) {
+  .rd-set-top-row {
+    grid-template-columns: 1fr minmax(280px, 340px);
+  }
+}
+
 .rd-set-card-info,
+.rd-set-card-vis {
+  height: 100%;
+}
+
 .rd-set-card-full {
   grid-column: 1 / -1;
 }
 
 @media (min-width: 1024px) {
-  .rd-set-card-info {
-    grid-column: span 8;
-  }
-
-  .rd-set-side-col {
-    grid-column: span 4;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
   .rd-set-card-half {
     grid-column: span 6;
   }
@@ -1733,12 +1740,6 @@
   .rd-set-form-footer {
     grid-column: 1 / -1;
   }
-}
-
-.rd-set-side-col {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
 }
 
 .rd-set-card-head {
@@ -1981,56 +1982,6 @@
 
 .rd-set-switch-sm .rd-set-switch input:checked + .rd-set-switch-track::after {
   transform: translateX(1rem);
-}
-
-.rd-set-premium {
-  background: #27313f;
-  color: #eaf1ff;
-  position: relative;
-  overflow: hidden;
-}
-
-.rd-set-premium-title {
-  font-family: "Epilogue", system-ui, sans-serif;
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem;
-  position: relative;
-  z-index: 1;
-}
-
-.rd-set-premium-text {
-  font-size: 0.75rem;
-  opacity: 0.85;
-  line-height: 1.45;
-  margin: 0 0 1.25rem;
-  position: relative;
-  z-index: 1;
-}
-
-.rd-set-premium-btn {
-  width: 100%;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 0.5rem;
-  background: #fff;
-  color: #121c2a;
-  font-size: 0.875rem;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: not-allowed;
-  opacity: 0.7;
-  position: relative;
-  z-index: 1;
-}
-
-.rd-set-premium-bg {
-  position: absolute;
-  right: -1.5rem;
-  bottom: -1.5rem;
-  font-size: 7.5rem;
-  opacity: 0.1;
-  pointer-events: none;
 }
 
 .rd-set-hours-list {

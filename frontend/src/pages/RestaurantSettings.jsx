@@ -213,60 +213,60 @@ function RestaurantSettings() {
       {deleteError ? <div className="rd-alert-error">{deleteError}</div> : null}
 
       <form className="rd-set-grid" onSubmit={handleSave}>
-        <section className="rd-set-card rd-set-card-info">
-          <div className="rd-set-card-head">
-            <div className="rd-set-icon-wrap rd-set-icon-green">
-              <span className="material-symbols-outlined">restaurant</span>
+        <div className="rd-set-top-row">
+          <section className="rd-set-card rd-set-card-info">
+            <div className="rd-set-card-head">
+              <div className="rd-set-icon-wrap rd-set-icon-green">
+                <span className="material-symbols-outlined">restaurant</span>
+              </div>
+              <h3 className="rd-set-card-title">Restaurant Information</h3>
             </div>
-            <h3 className="rd-set-card-title">Restaurant Information</h3>
-          </div>
-          <div className="rd-set-form-grid">
-            <div className="rd-set-field">
-              <label htmlFor="restaurantName">Restaurant Name</label>
-              <input
-                id="restaurantName"
-                type="text"
-                value={restaurantName}
-                onChange={(e) => setRestaurantName(e.target.value)}
-                required
-              />
+            <div className="rd-set-form-grid">
+              <div className="rd-set-field">
+                <label htmlFor="restaurantName">Restaurant Name</label>
+                <input
+                  id="restaurantName"
+                  type="text"
+                  value={restaurantName}
+                  onChange={(e) => setRestaurantName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="rd-set-field">
+                <label htmlFor="cuisineType">Cuisine Type</label>
+                <input
+                  id="cuisineType"
+                  type="text"
+                  value={cuisineType}
+                  onChange={(e) => setCuisineType(e.target.value)}
+                  placeholder="e.g. Italian, Organic"
+                />
+              </div>
+              <div className="rd-set-field">
+                <label htmlFor="phone">Phone Number</label>
+                <input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="rd-set-field">
+                <label htmlFor="location">Location / Address</label>
+                <input
+                  id="location"
+                  type="text"
+                  value={locationText}
+                  onChange={(e) => setLocationText(e.target.value)}
+                  placeholder="City, area, or full address"
+                  required
+                />
+              </div>
             </div>
-            <div className="rd-set-field">
-              <label htmlFor="cuisineType">Cuisine Type</label>
-              <input
-                id="cuisineType"
-                type="text"
-                value={cuisineType}
-                onChange={(e) => setCuisineType(e.target.value)}
-                placeholder="e.g. Italian, Organic"
-              />
-            </div>
-            <div className="rd-set-field">
-              <label htmlFor="phone">Phone Number</label>
-              <input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-              />
-            </div>
-            <div className="rd-set-field">
-              <label htmlFor="location">Location / Address</label>
-              <input
-                id="location"
-                type="text"
-                value={locationText}
-                onChange={(e) => setLocationText(e.target.value)}
-                placeholder="City, area, or full address"
-                required
-              />
-            </div>
-          </div>
-        </section>
+          </section>
 
-        <aside className="rd-set-side-col">
-          <section className="rd-set-card">
+          <section className="rd-set-card rd-set-card-vis">
             <div className="rd-set-vis-head">
               <h3 className="rd-set-card-title-sm">Store Visibility</h3>
               <span className={`rd-set-live-pill rd-set-live-pill-${status}`}>{vis.pill}</span>
@@ -303,18 +303,7 @@ function RestaurantSettings() {
               <p className="rd-set-status-sub">{vis.sub}</p>
             </div>
           </section>
-
-          <section className="rd-set-card rd-set-premium">
-            <h3 className="rd-set-premium-title">Partner account</h3>
-            <p className="rd-set-premium-text">
-              Manage payouts and premium features when they become available in your region.
-            </p>
-            <button type="button" className="rd-set-premium-btn" disabled>
-              View Benefits
-            </button>
-            <span className="material-symbols-outlined rd-set-premium-bg">verified</span>
-          </section>
-        </aside>
+        </div>
 
         <section className="rd-set-card rd-set-card-half">
           <div className="rd-set-card-head">
