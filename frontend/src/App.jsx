@@ -9,6 +9,7 @@ import CustomerProfileSetup from "./pages/CustomerProfileSetup";
 import DriverProfileSetup from "./pages/DriverProfileSetup";
 import RestaurantProfileSetup from "./pages/RestaurantProfileSetup";
 import Dashboard from "./pages/Dashboard";
+import RestaurantLayout from "./components/restaurant/RestaurantLayout";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
 import RestaurantOrderHistory from "./pages/RestaurantOrderHistory";
 import RestaurantSettings from "./pages/RestaurantSettings";
@@ -94,61 +95,22 @@ function App() {
         }
       />
       <Route
-        path="/restaurant/dashboard"
+        path="/restaurant"
         element={
           <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
-            <RestaurantDashboard />
+            <RestaurantLayout />
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/restaurant/orders"
-        element={
-          <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
-            <RestaurantOrderHistory />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/restaurant/settings"
-        element={
-          <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
-            <RestaurantSettings />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/restaurant/menu"
-        element={
-          <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
-            <MenuList />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/restaurant/menu/create"
-        element={
-          <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
-            <MenuCreate />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/restaurant/menu/edit/:id"
-        element={
-          <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
-            <MenuEdit />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/restaurant/categories"
-        element={
-          <ProtectedRoute allowedRoles={["restaurant"]} requireCompleteProfile>
-            <CategoryManager />
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<RestaurantDashboard />} />
+        <Route path="orders" element={<RestaurantOrderHistory />} />
+        <Route path="settings" element={<RestaurantSettings />} />
+        <Route path="menu" element={<MenuList />} />
+        <Route path="menu/create" element={<MenuCreate />} />
+        <Route path="menu/edit/:id" element={<MenuEdit />} />
+        <Route path="categories" element={<CategoryManager />} />
+      </Route>
 
       <Route
         path="/customer/dashboard"

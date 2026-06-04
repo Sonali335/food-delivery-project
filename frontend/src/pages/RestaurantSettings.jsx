@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { updateStatus } from "../api/restaurant";
 import {
   completeRestaurantProfile,
   deleteProfile,
@@ -8,7 +7,7 @@ import {
   tryPasswordUpdateIfFilled,
 } from "../api/profile";
 import PasswordUpdateFields from "../components/PasswordUpdateFields";
-import RestaurantLayout from "../components/restaurant/RestaurantLayout";
+import { useRestaurantProfile } from "../components/restaurant/RestaurantProfileContext";
 
 const WEEKDAYS = [
   { key: "monday", label: "Monday" },
@@ -59,6 +58,8 @@ function statusVisibilityLabel(status) {
 
 function RestaurantSettings() {
   const navigate = useNavigate();
+  const { setRestaurantName: setShellRestaurantName, applyStatus, setStatus: setShellStatus } =
+    useRestaurantProfile();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -140,15 +141,18 @@ function RestaurantSettings() {
         confirmPassword,
       });
       const nextStatus = acceptingOrders ? (status === "closed" ? "open" : status) : "closed";
-      await updateStatus(nextStatus);
+      await applyStatus(nextStatus);
       setStatus(nextStatus);
+      setShellStatus(nextStatus);
+      const trimmedName = restaurantName.trim();
       await completeRestaurantProfile({
-        restaurantName: restaurantName.trim(),
+        restaurantName: trimmedName,
         phone: phone.trim(),
         location: locationText.trim(),
         cuisineType: cuisineType.trim(),
         openingHours: JSON.stringify(hours),
       });
+      setShellRestaurantName(trimmedName);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -169,6 +173,7 @@ function RestaurantSettings() {
     setDeleting(true);
     try {
       await deleteProfile();
+      sessionStorage.removeItem("food_delivery_restaurant_shell");
       localStorage.clear();
       navigate("/login");
     } catch (err) {
@@ -181,15 +186,11 @@ function RestaurantSettings() {
   const vis = statusVisibilityLabel(status);
 
   if (loading) {
-    return (
-      <RestaurantLayout>
-        <p className="rd-empty">Loading settings…</p>
-      </RestaurantLayout>
-    );
+    return <p className="rd-empty">Loading settings…</p>;
   }
 
   return (
-    <RestaurantLayout>
+    <>
       <header className="rd-set-header">
         <div>
           <h1 className="rd-page-title">Settings</h1>
@@ -424,7 +425,7 @@ function RestaurantSettings() {
           </button>
         </div>
       </form>
-    </RestaurantLayout>
+    </>
   );
 }
 

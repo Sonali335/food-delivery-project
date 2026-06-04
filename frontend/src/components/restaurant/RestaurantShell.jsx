@@ -10,13 +10,16 @@ function RestaurantShell({
   children,
 }) {
   const navigate = useNavigate();
-  const displayName = restaurantName || "My Restaurant";
+  const displayName =
+    restaurantName?.trim() ||
+    (statusLoading ? "" : "My Restaurant");
   const normalizedStatus = (status || "open").toLowerCase();
 
   const linkClass = ({ isActive }) =>
     `rd-nav-link ${isActive ? "rd-nav-link-active" : ""}`;
 
   const handleLogout = () => {
+    sessionStorage.removeItem("food_delivery_restaurant_shell");
     localStorage.clear();
     navigate("/login");
   };
@@ -66,7 +69,9 @@ function RestaurantShell({
               <span className="material-symbols-outlined">restaurant</span>
             </div>
             <div>
-              <h3 className="rd-sidebar-name">{displayName}</h3>
+              <h3 className="rd-sidebar-name">
+                {displayName || "\u00A0"}
+              </h3>
               <p className="rd-sidebar-role">Restaurant partner</p>
             </div>
           </div>

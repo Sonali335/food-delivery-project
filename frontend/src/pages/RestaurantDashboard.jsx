@@ -1,9 +1,8 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getRestaurantOrders, updateOrderStatus } from "../api/orders";
-import { getProfile } from "../api/profile";
 import { connectSocket } from "../socket";
-import RestaurantLayout from "../components/restaurant/RestaurantLayout";
+import { useRestaurantProfile } from "../components/restaurant/RestaurantProfileContext";
 
 const ACTIVE_STATUSES = ["PLACED", "ACCEPTED", "PREPARING"];
 
@@ -71,23 +70,11 @@ function computeStats(orders) {
 
 function RestaurantDashboard() {
   const navigate = useNavigate();
-  const [restaurantName, setRestaurantName] = useState("");
+  const { restaurantName } = useRestaurantProfile();
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState("");
   const [orderActionId, setOrderActionId] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    getProfile()
-      .then(({ profile }) => {
-        if (!cancelled && profile?.restaurantName) setRestaurantName(profile.restaurantName);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -154,7 +141,7 @@ function RestaurantDashboard() {
   const welcomeName = restaurantName || "your restaurant";
 
   return (
-    <RestaurantLayout>
+    <>
       <div className="rd-page-header">
         <div>
           <h1 className="rd-page-title">Dashboard overview</h1>
@@ -337,7 +324,7 @@ function RestaurantDashboard() {
           </div>
         </div>
       </div>
-    </RestaurantLayout>
+    </>
   );
 }
 

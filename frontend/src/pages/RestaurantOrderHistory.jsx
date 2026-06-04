@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { getRestaurantOrders, updateOrderStatus } from "../api/orders";
 import { connectSocket } from "../socket";
 import RestaurantOrderDetailModal from "../components/restaurant/RestaurantOrderDetailModal";
-import RestaurantLayout from "../components/restaurant/RestaurantLayout";
 import {
   avatarColor,
   canRejectOrder,
@@ -169,7 +168,7 @@ function RestaurantOrderHistory() {
   const rangeEnd = Math.min(safePage * PAGE_SIZE, filteredOrders.length);
 
   return (
-    <RestaurantLayout>
+    <>
       <header className="rd-oh-header">
         <div>
           <h1 className="rd-page-title">Order History</h1>
@@ -360,7 +359,7 @@ function RestaurantOrderHistory() {
           actionError={modalError}
         />
       ) : null}
-    </RestaurantLayout>
+    </>
   );
 }
 

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { getCategories, createCategory, deleteCategory } from "../api/category";
-import RestaurantLayout from "../components/restaurant/RestaurantLayout";
 
 function CategoryManager() {
   const [categories, setCategories] = useState([]);
@@ -54,7 +53,7 @@ function CategoryManager() {
   };
 
   return (
-    <RestaurantLayout>
+    <>
       <div className="rd-page-header">
         <div>
           <h1 className="rd-page-title">Categories</h1>
@@ -119,7 +118,7 @@ function CategoryManager() {
           </ul>
         )}
       </div>
-    </RestaurantLayout>
+    </>
   );
 }
 

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCategories } from "../api/category";
 import { createMenuItem, uploadMenuImage } from "../api/menu";
-import RestaurantLayout from "../components/restaurant/RestaurantLayout";
 
 function MenuCreate() {
   const navigate = useNavigate();
@@ -78,7 +77,7 @@ function MenuCreate() {
   };
 
   return (
-    <RestaurantLayout>
+    <>
       <div className="rd-page-header">
         <div>
           <h1 className="rd-page-title">Add menu item</h1>
@@ -154,7 +153,7 @@ function MenuCreate() {
           </div>
         </form>
       </div>
-    </RestaurantLayout>
+    </>
   );
 }
 

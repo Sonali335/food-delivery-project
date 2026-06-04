@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMenuItems, deleteMenuItem } from "../api/menu";
-import RestaurantLayout from "../components/restaurant/RestaurantLayout";
-
 function categoryName(item) {
   const c = item.categoryId;
   if (c && typeof c === "object" && c.name) return c.name;
@@ -44,7 +42,7 @@ function MenuList() {
   };
 
   return (
-    <RestaurantLayout>
+    <>
       <div className="rd-page-header">
         <div>
           <h1 className="rd-page-title">Menu management</h1>
@@ -127,7 +125,7 @@ function MenuList() {
           ))}
         </div>
       )}
-    </RestaurantLayout>
+    </>
   );
 }
 

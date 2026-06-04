@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getCategories } from "../api/category";
 import { getMenuItem, updateMenuItem, uploadMenuImage } from "../api/menu";
-import RestaurantLayout from "../components/restaurant/RestaurantLayout";
 
 function resolveCategoryIdField(raw) {
   if (raw && typeof raw === "object" && raw._id != null) return String(raw._id);
@@ -93,15 +92,11 @@ function MenuEdit() {
   const thumbSrc = previewUrl || imageUrl || null;
 
   if (loading) {
-    return (
-      <RestaurantLayout>
-        <p className="rd-empty">Loading…</p>
-      </RestaurantLayout>
-    );
+    return <p className="rd-empty">Loading…</p>;
   }
 
   return (
-    <RestaurantLayout>
+    <>
       <div className="rd-page-header">
         <div>
           <h1 className="rd-page-title">Edit menu item</h1>
@@ -176,7 +171,7 @@ function MenuEdit() {
           </div>
         </form>
       </div>
-    </RestaurantLayout>
+    </>
   );
 }
 

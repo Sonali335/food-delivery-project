@@ -1,12 +1,37 @@
 import { useEffect, useState } from "react";
+import { Outlet } from "react-router-dom";
 import { getStatus, updateStatus } from "../../api/restaurant";
 import { getProfile } from "../../api/profile";
 import RestaurantShell from "./RestaurantShell";
+import { RestaurantProfileContext } from "./RestaurantProfileContext";
 
-function RestaurantLayout({ children }) {
-  const [restaurantName, setRestaurantName] = useState("");
-  const [status, setStatus] = useState("open");
-  const [statusLoading, setStatusLoading] = useState(true);
+const CACHE_KEY = "food_delivery_restaurant_shell";
+
+function readShellCache() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") return parsed;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function writeShellCache(data) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch {
+    /* ignore */
+  }
+}
+
+function RestaurantLayout() {
+  const cached = readShellCache();
+  const [restaurantName, setRestaurantName] = useState(cached?.restaurantName ?? "");
+  const [status, setStatus] = useState(cached?.status ?? "open");
+  const [statusLoading, setStatusLoading] = useState(!cached?.restaurantName);
   const [statusSaving, setStatusSaving] = useState(false);
   const [shellError, setShellError] = useState("");
 
@@ -20,8 +45,11 @@ function RestaurantLayout({ children }) {
           getProfile().catch(() => ({ profile: null })),
         ]);
         if (!cancelled) {
-          setStatus(statusRes.status || "open");
-          setRestaurantName(profileRes.profile?.restaurantName || "");
+          const nextStatus = statusRes.status || "open";
+          const nextName = profileRes.profile?.restaurantName || "";
+          setStatus(nextStatus);
+          setRestaurantName(nextName);
+          writeShellCache({ restaurantName: nextName, status: nextStatus });
         }
       } catch (e) {
         if (!cancelled) setShellError(e.message || "Failed to load restaurant");
@@ -39,7 +67,12 @@ function RestaurantLayout({ children }) {
     setShellError("");
     try {
       const data = await updateStatus(next);
-      setStatus(data.status || next);
+      const resolved = data.status || next;
+      setStatus(resolved);
+      writeShellCache({
+        restaurantName,
+        status: resolved,
+      });
     } catch (e) {
       setShellError(e.message || "Could not update status");
     } finally {
@@ -47,17 +80,35 @@ function RestaurantLayout({ children }) {
     }
   };
 
+  const updateRestaurantName = (name) => {
+    const trimmed = String(name ?? "").trim();
+    setRestaurantName(trimmed);
+    writeShellCache({ restaurantName: trimmed, status });
+  };
+
   return (
-    <RestaurantShell
-      restaurantName={restaurantName}
-      status={status}
-      statusLoading={statusLoading}
-      statusSaving={statusSaving}
-      onSetStatus={applyStatus}
+    <RestaurantProfileContext.Provider
+      value={{
+        restaurantName,
+        setRestaurantName: updateRestaurantName,
+        status,
+        setStatus,
+        statusLoading,
+        statusSaving,
+        applyStatus,
+      }}
     >
-      {shellError ? <div className="rd-alert-error">{shellError}</div> : null}
-      {children}
-    </RestaurantShell>
+      <RestaurantShell
+        restaurantName={restaurantName}
+        status={status}
+        statusLoading={statusLoading}
+        statusSaving={statusSaving}
+        onSetStatus={applyStatus}
+      >
+        {shellError ? <div className="rd-alert-error">{shellError}</div> : null}
+        <Outlet />
+      </RestaurantShell>
+    </RestaurantProfileContext.Provider>
   );
 }
 
