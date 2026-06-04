@@ -749,6 +749,206 @@
 }
 
 /* Menu management */
+.rd-menu-empty-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 12rem;
+}
+
+.rd-menu-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  max-width: 22rem;
+}
+
+.rd-menu-empty-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: #eff4ff;
+  color: #006c49;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+
+.rd-menu-empty-icon .material-symbols-outlined {
+  font-size: 1.75rem;
+}
+
+.rd-menu-empty-title {
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: #121c2a;
+  margin: 0;
+}
+
+.rd-menu-empty-text {
+  font-size: 0.9375rem;
+  color: #737373;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.rd-menu-empty-text strong {
+  color: #006c49;
+  font-weight: 600;
+}
+
+/* Menu list table */
+.rd-menu-list-header {
+  margin-bottom: 1.5rem;
+}
+
+.rd-menu-list-toolbar {
+  align-items: stretch;
+}
+
+@media (min-width: 768px) {
+  .rd-menu-list-toolbar {
+    align-items: center;
+  }
+}
+
+.rd-menu-list-chips {
+  margin-bottom: 1.25rem;
+}
+
+.rd-menu-table tbody tr {
+  cursor: default;
+}
+
+.rd-menu-table tbody tr:hover td {
+  background: rgba(250, 250, 250, 0.6);
+}
+
+.rd-menu-table-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 12rem;
+}
+
+.rd-menu-table-thumb {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.rd-menu-table-thumb-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff4ff;
+  color: #006c49;
+}
+
+.rd-menu-table-thumb-empty .material-symbols-outlined {
+  font-size: 1.5rem;
+}
+
+.rd-menu-table-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.rd-menu-table-name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: #121c2a;
+}
+
+.rd-menu-table-desc {
+  font-size: 0.8125rem;
+  color: #737373;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rd-menu-table-category {
+  font-size: 0.875rem;
+  color: #6c7a71;
+  text-transform: capitalize;
+}
+
+.rd-menu-table-price {
+  font-weight: 600;
+  color: #006c49;
+  white-space: nowrap;
+}
+
+.rd-menu-table-badge {
+  display: inline-flex;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rd-menu-table-badge-on {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.rd-menu-table-badge-off {
+  background: #f5f5f5;
+  color: #525252;
+}
+
+.rd-menu-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.rd-menu-table-btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.rd-menu-table-delete {
+  border: none;
+  background: transparent;
+  color: #b91c1c;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0.4rem 0.5rem;
+}
+
+.rd-menu-table-delete:hover {
+  text-decoration: underline;
+}
+
+.rd-menu-table-footer {
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid #f5f5f5;
+}
+
+.rd-menu-table-footer-text {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #737373;
+}
+
 .rd-menu-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -899,6 +1099,168 @@
   border: 1px solid #fafafa;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   padding: 1.5rem;
+}
+
+/* Menu item create / edit */
+.rd-menu-form-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #006c49;
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+}
+
+.rd-menu-form-back:hover {
+  text-decoration: underline;
+}
+
+.rd-menu-form-back .material-symbols-outlined {
+  font-size: 1.125rem;
+}
+
+.rd-menu-form-no-cat a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.rd-menu-form-card {
+  background: #fff;
+  border-radius: 0.75rem;
+  border: 1px solid #fafafa;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem 2rem 2rem;
+  max-width: 56rem;
+}
+
+.rd-menu-form-main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 900px) {
+  .rd-menu-form-main {
+    grid-template-columns: 1fr minmax(220px, 280px);
+    align-items: start;
+  }
+}
+
+.rd-menu-form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+@media (min-width: 520px) {
+  .rd-menu-form-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+}
+
+.rd-menu-form-fields .rd-form-field:last-child {
+  margin-bottom: 0;
+}
+
+.rd-menu-form-media-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #3c4a42;
+  margin: 0 0 0.75rem;
+}
+
+.rd-menu-image-zone {
+  aspect-ratio: 1;
+  border-radius: 0.75rem;
+  border: 2px dashed #dee9fc;
+  background: #f8f9ff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rd-menu-image-zone-has {
+  border-style: solid;
+  border-color: #e5e5e5;
+}
+
+.rd-menu-image-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rd-menu-image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  color: #6c7a71;
+  font-size: 0.8125rem;
+}
+
+.rd-menu-image-placeholder .material-symbols-outlined {
+  font-size: 2.5rem;
+  color: #006c49;
+  opacity: 0.7;
+}
+
+.rd-menu-image-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rd-menu-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.rd-menu-image-btn {
+  cursor: pointer;
+  margin: 0;
+}
+
+.rd-menu-image-remove {
+  border: none;
+  background: transparent;
+  color: #b91c1c;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0.625rem 0.5rem;
+}
+
+.rd-menu-image-remove:hover {
+  text-decoration: underline;
+}
+
+.rd-menu-image-filename,
+.rd-menu-image-hint {
+  font-size: 0.75rem;
+  color: #737373;
+  margin: 0.5rem 0 0;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.rd-menu-form-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #f0f0f0;
 }
 
 .rd-form-field {

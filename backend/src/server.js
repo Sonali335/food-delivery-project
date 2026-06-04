@@ -14,9 +14,15 @@ if (!process.env.JWT_SECRET || String(process.env.JWT_SECRET).trim() === "") {
 }
 
 const { isSmtpConfigured } = require("./config/email");
+const { isCloudinaryConfigured } = require("./utils/menuImageStorage");
 if (!isSmtpConfigured()) {
   console.warn(
     "[email] SMTP is not configured — OTP emails will not reach your inbox. Copy backend/.env.example into backend/.env and set SMTP_SERVICE=gmail (or SMTP_HOST) plus SMTP_USER and SMTP_PASS, then restart the server."
+  );
+}
+if (!isCloudinaryConfigured()) {
+  console.warn(
+    "[menu images] Cloudinary is not configured — menu photos are saved locally under backend/uploads/ (fine for development)."
   );
 }
 
@@ -42,6 +48,9 @@ const orderRoutes = require("./routes/orderRoutes");
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+const uploadsDir = path.join(__dirname, "..", "uploads");
+app.use("/uploads", express.static(uploadsDir));
 app.use("/api/auth", authRoutes);
 app.use("/api/customer", customerRoutes);
 app.use("/api/restaurant", restaurantRoutes);

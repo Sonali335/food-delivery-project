@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getCategories } from "../api/category";
 import { getMenuItem, updateMenuItem, uploadMenuImage } from "../api/menu";
+import MenuItemForm from "../components/restaurant/MenuItemForm";
 
 function resolveCategoryIdField(raw) {
   if (raw && typeof raw === "object" && raw._id != null) return String(raw._id);
@@ -64,6 +65,15 @@ function MenuEdit() {
     });
   };
 
+  const handleClearImage = () => {
+    setPickedFile(null);
+    setImageUrl("");
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -89,89 +99,36 @@ function MenuEdit() {
     }
   };
 
-  const thumbSrc = previewUrl || imageUrl || null;
+  const displayPreview = previewUrl || imageUrl || null;
 
   if (loading) {
     return <p className="rd-empty">Loading…</p>;
   }
 
   return (
-    <>
-      <div className="rd-page-header">
-        <div>
-          <h1 className="rd-page-title">Edit menu item</h1>
-          <p className="rd-page-subtitle">Update details for this dish.</p>
-        </div>
-      </div>
-
-      {error ? <div className="rd-alert-error">{error}</div> : null}
-
-      <div className="rd-form-panel">
-        <form onSubmit={handleSubmit}>
-          <div className="rd-form-field">
-            <label htmlFor="name">Name</label>
-            <input id="name" value={name} onChange={(ev) => setName(ev.target.value)} required />
-          </div>
-          <div className="rd-form-field">
-            <label htmlFor="description">Description</label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(ev) => setDescription(ev.target.value)}
-              rows={3}
-            />
-          </div>
-          <div className="rd-form-field">
-            <label htmlFor="price">Price</label>
-            <input
-              id="price"
-              type="number"
-              min="0"
-              step="0.01"
-              value={price}
-              onChange={(ev) => setPrice(ev.target.value)}
-              required
-            />
-          </div>
-          <div className="rd-form-field">
-            <label htmlFor="category">Category</label>
-            <select
-              id="category"
-              value={categoryId}
-              onChange={(ev) => setCategoryId(ev.target.value)}
-              required
-            >
-              {categories.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="rd-form-field">
-            <label htmlFor="image">Image (optional)</label>
-            <input id="image" type="file" accept="image/*" onChange={handleFileChange} />
-          </div>
-          {thumbSrc ? (
-            <img
-              src={thumbSrc}
-              alt=""
-              width={120}
-              height={120}
-              style={{ objectFit: "cover", borderRadius: 8, marginBottom: "1rem" }}
-            />
-          ) : null}
-          <div className="rd-form-actions">
-            <button type="button" className="rd-btn-outline" onClick={() => navigate("/restaurant/menu")}>
-              Cancel
-            </button>
-            <button type="submit" className="rd-btn-primary" disabled={saving || !categories.length}>
-              {saving ? (pickedFile ? "Uploading & saving…" : "Saving…") : "Save changes"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </>
+    <MenuItemForm
+      title="Edit menu item"
+      subtitle="Update name, price, category, or photo for this dish."
+      categories={categories}
+      name={name}
+      description={description}
+      price={price}
+      categoryId={categoryId}
+      onNameChange={setName}
+      onDescriptionChange={setDescription}
+      onPriceChange={setPrice}
+      onCategoryChange={setCategoryId}
+      previewSrc={displayPreview}
+      pickedFileName={pickedFile?.name}
+      onFileChange={handleFileChange}
+      onClearImage={handleClearImage}
+      error={error}
+      saving={saving}
+      submitLabel="Save changes"
+      savingLabel={pickedFile ? "Uploading & saving…" : "Saving…"}
+      onSubmit={handleSubmit}
+      onCancel={() => navigate("/restaurant/menu")}
+    />
   );
 }
 
