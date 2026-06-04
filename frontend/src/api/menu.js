@@ -5,6 +5,21 @@ const authHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+export const searchMenuItems = async (query) => {
+  const params = new URLSearchParams({ q: query });
+  const response = await fetch(`${getApiBase()}/api/menu/search?${params}`, {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+    },
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.message || "Could not search menu");
+  }
+  return result;
+};
+
 export const getMenuByRestaurant = async (restaurantId) => {
   const response = await fetch(`${getApiBase()}/api/menu/restaurant/${restaurantId}`, {
     method: "GET",

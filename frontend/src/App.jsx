@@ -22,6 +22,7 @@ import MenuEdit from "./pages/MenuEdit";
 import CategoryManager from "./pages/CategoryManager";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import CustomerRestaurants from "./pages/CustomerRestaurants";
+import CustomerSearch from "./pages/CustomerSearch";
 import CustomerRestaurantMenu from "./pages/CustomerRestaurantMenu";
 import CustomerOrders from "./pages/CustomerOrders";
 import CustomerOrderDetails from "./pages/CustomerOrderDetails";
@@ -117,6 +118,14 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["customer"]} requireCompleteProfile>
             <CustomerDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/search"
+        element={
+          <ProtectedRoute allowedRoles={["customer"]} requireCompleteProfile>
+            <CustomerSearch />
           </ProtectedRoute>
         }
       />

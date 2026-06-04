@@ -5,15 +5,13 @@ import CustomerShell from "./CustomerShell";
 function CustomerLayout({ children }) {
   const [customerName, setCustomerName] = useState("Customer");
 
-  const [profile, setProfile] = useState(null);
-
   useEffect(() => {
     let cancelled = false;
     getProfile()
-      .then(({ profile: p }) => {
-        if (cancelled || !p) return;
-        if (p.username) setCustomerName(p.username.trim());
-        setProfile(p);
+      .then(({ profile }) => {
+        if (!cancelled && profile?.username) {
+          setCustomerName(profile.username.trim());
+        }
       })
       .catch(() => {});
     return () => {
@@ -21,11 +19,7 @@ function CustomerLayout({ children }) {
     };
   }, []);
 
-  return (
-    <CustomerShell customerName={customerName} customerProfile={profile}>
-      {children}
-    </CustomerShell>
-  );
+  return <CustomerShell customerName={customerName}>{children}</CustomerShell>;
 }
 
 export default CustomerLayout;

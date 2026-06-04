@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getCustomerOrders } from "../api/orders";
 import { getAllRestaurants } from "../api/restaurant";
+import { getProfile } from "../api/profile";
 import { connectSocket } from "../socket";
 import { resolveMediaUrl } from "../utils/mediaUrl";
 import CustomerLayout from "../components/customer/CustomerLayout";
@@ -9,51 +10,87 @@ import "../components/customer/customer-dashboard.css";
 
 const ACTIVE_STATUSES = ["PLACED", "ACCEPTED", "PREPARING", "PICKED_UP"];
 
-const FILTER_CHIPS = [
-  { id: "all", label: "All restaurants" },
-  { id: "open", label: "Open now" },
-  { id: "rated", label: "Top rated" },
-];
+function isToday(iso) {
+  if (!iso) return false;
+  const d = new Date(iso);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
+
+function statusBadgeClass(status) {
+  const key = (status || "").toLowerCase().replace(/-/g, "_");
+  return `cd-badge cd-badge-${key}`;
+}
 
 function statusLabel(status) {
-  if (!status) return "";
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  if (!status) return "—";
+  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function computeStats(orders) {
+  const todayOrders = orders.filter((o) => isToday(o.createdAt));
+  const todaySpent = todayOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+  const activeCount = orders.filter((o) => ACTIVE_STATUSES.includes(o.status)).length;
+  return {
+    todayCount: todayOrders.length,
+    todaySpent,
+    activeCount,
+    totalCount: orders.length,
+  };
 }
 
 function CustomerDashboard() {
-  const [searchParams] = useSearchParams();
-  const searchQuery = (searchParams.get("q") || "").trim().toLowerCase();
-  const [restaurants, setRestaurants] = useState([]);
-  const [activeOrder, setActiveOrder] = useState(null);
+  const navigate = useNavigate();
+  const [customerName, setCustomerName] = useState("");
+  const [orders, setOrders] = useState([]);
   const [nameById, setNameById] = useState({});
-  const [filter, setFilter] = useState("all");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [featuredRestaurants, setFeaturedRestaurants] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError("");
+    getProfile()
+      .then(({ profile }) => {
+        if (!cancelled && profile?.username) setCustomerName(profile.username.trim());
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-    Promise.all([getAllRestaurants(), getCustomerOrders()])
-      .then(([restaurantsRes, ordersRes]) => {
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setOrdersError("");
+      try {
+        const [ordersRes, restaurantsRes] = await Promise.all([
+          getCustomerOrders(),
+          getAllRestaurants(),
+        ]);
         if (cancelled) return;
-        const list = restaurantsRes.restaurants || [];
         const map = {};
-        list.forEach((r) => {
+        const restaurants = restaurantsRes.restaurants || [];
+        restaurants.forEach((r) => {
           map[String(r.id)] = r.name;
         });
         setNameById(map);
-        setRestaurants(list);
-        const orders = ordersRes.orders || [];
-        setActiveOrder(orders.find((o) => ACTIVE_STATUSES.includes(o.status)) || null);
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e.message || "Failed to load restaurants");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        setOrders(ordersRes.orders || []);
+        setFeaturedRestaurants(restaurants.filter((r) => r.status !== "closed").slice(0, 4));
+      } catch (e) {
+        if (!cancelled) setOrdersError(e.message || "Failed to load dashboard");
+      } finally {
+        if (!cancelled) setOrdersLoading(false);
+      }
+    };
+
+    load();
 
     const socket = connectSocket();
     if (!socket) {
@@ -61,205 +98,199 @@ function CustomerDashboard() {
         cancelled = true;
       };
     }
+
     const onOrderUpdate = (payload) => {
-      setActiveOrder((prev) => {
-        if (!prev || String(prev._id) !== payload.orderId) return prev;
-        return { ...prev, status: payload.status };
-      });
+      setOrders((prev) =>
+        prev.map((o) =>
+          String(o._id) === payload.orderId
+            ? { ...o, status: payload.status, updatedAt: payload.updatedAt }
+            : o
+        )
+      );
     };
+
     socket.on("order:update", onOrderUpdate);
+
     return () => {
       cancelled = true;
       socket.off("order:update", onOrderUpdate);
     };
   }, []);
 
-  const cuisineOptions = useMemo(() => {
-    const set = new Set();
-    restaurants.forEach((r) => {
-      if (r.cuisine) set.add(r.cuisine);
-    });
-    return Array.from(set).sort();
-  }, [restaurants]);
+  const stats = useMemo(() => computeStats(orders), [orders]);
+  const recentOrders = useMemo(() => orders.slice(0, 6), [orders]);
+  const activeOrder = useMemo(
+    () => orders.find((o) => ACTIVE_STATUSES.includes(o.status)),
+    [orders]
+  );
 
-  const [cuisineFilter, setCuisineFilter] = useState("");
-
-  const filtered = useMemo(() => {
-    let list = [...restaurants];
-    if (searchQuery) {
-      list = list.filter((r) => {
-        const hay = `${r.name} ${r.location || ""} ${r.cuisine || ""}`.toLowerCase();
-        return hay.includes(searchQuery);
-      });
-    }
-    if (cuisineFilter) {
-      list = list.filter((r) => r.cuisine === cuisineFilter);
-    }
-    if (filter === "open") {
-      list = list.filter((r) => r.status === "open");
-    }
-    if (filter === "rated") {
-      list.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
-    } else {
-      list.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-    }
-    return list;
-  }, [restaurants, searchQuery, filter, cuisineFilter]);
+  const welcomeName = customerName || "there";
 
   return (
     <CustomerLayout>
-      <div className="cd-browse-layout">
-        <aside className="cd-browse-sidebar">
-          <section className="cd-browse-filter-section">
-            <h3>Cuisine</h3>
+      <div className="cd-page-header">
+        <div>
+          <h1 className="cd-page-title">Dashboard overview</h1>
+          <p className="cd-page-subtitle">
+            Welcome back, {welcomeName}. Here&apos;s your ordering activity.
+          </p>
+        </div>
+        <Link to="/customer/search" className="cd-btn-primary">
+          <span className="material-symbols-outlined">search</span>
+          Search food
+        </Link>
+      </div>
+
+      {ordersError ? <div className="cd-alert-error">{ordersError}</div> : null}
+
+      {activeOrder ? (
+        <div className="cd-active-card">
+          <h3>Order in progress</h3>
+          <p>
+            {nameById[String(activeOrder.restaurantId)] || "Restaurant"} ·{" "}
+            {statusLabel(activeOrder.status)} · ${Number(activeOrder.totalAmount).toFixed(2)}
+          </p>
+          <Link to={`/customer/orders/${activeOrder._id}`} className="cd-btn-outline">
+            View order details
+            <span className="material-symbols-outlined">arrow_forward</span>
+          </Link>
+        </div>
+      ) : null}
+
+      <div className="cd-stats-grid">
+        <div className="cd-stat-card">
+          <div className="cd-stat-icon cd-stat-icon-green">
+            <span className="material-symbols-outlined">shopping_bag</span>
+          </div>
+          <p className="cd-stat-label">Today&apos;s orders</p>
+          <p className="cd-stat-value">
+            {ordersLoading ? "…" : stats.todayCount}
+            <span className="cd-stat-meta">{stats.totalCount} total</span>
+          </p>
+        </div>
+        <div className="cd-stat-card">
+          <div className="cd-stat-icon cd-stat-icon-amber">
+            <span className="material-symbols-outlined">payments</span>
+          </div>
+          <p className="cd-stat-label">Spent today</p>
+          <p className="cd-stat-value">
+            {ordersLoading ? "…" : `$${stats.todaySpent.toFixed(2)}`}
+          </p>
+        </div>
+        <div className="cd-stat-card">
+          <div className="cd-stat-icon cd-stat-icon-blue">
+            <span className="material-symbols-outlined">local_shipping</span>
+          </div>
+          <p className="cd-stat-label">Active orders</p>
+          <p className="cd-stat-value">
+            {ordersLoading ? "…" : stats.activeCount}
+            <span className="cd-stat-meta">In progress</span>
+          </p>
+        </div>
+      </div>
+
+      <div className="cd-content-grid">
+        <div className="cd-panel">
+          <div className="cd-panel-header">
+            <h3 className="cd-panel-title">Recent orders</h3>
+          </div>
+          {ordersLoading ? (
+            <p className="cd-empty">Loading orders…</p>
+          ) : recentOrders.length === 0 ? (
+            <p className="cd-empty">
+              No orders yet.{" "}
+              <Link to="/customer/restaurants">Browse restaurants</Link> to get started.
+            </p>
+          ) : (
+            <ul className="cd-order-list">
+              {recentOrders.map((order) => (
+                <li key={order._id}>
+                  <Link to={`/customer/orders/${order._id}`} className="cd-order-item">
+                    <div>
+                      <p className="cd-order-name">Order #{String(order._id).slice(-6)}</p>
+                      <p className="cd-order-meta">
+                        {nameById[String(order.restaurantId)] || "Restaurant"} · $
+                        {Number(order.totalAmount).toFixed(2)}
+                      </p>
+                    </div>
+                    <span className={statusBadgeClass(order.status)}>
+                      {statusLabel(order.status)}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="cd-panel">
+          <div className="cd-panel-header">
+            <h3 className="cd-panel-title">Quick links</h3>
+          </div>
+          <div className="cd-quick-links">
             <button
               type="button"
-              className={`cd-browse-cuisine-chip ${!cuisineFilter ? "cd-browse-cuisine-chip-active" : ""}`}
-              onClick={() => setCuisineFilter("")}
+              className="cd-quick-link"
+              onClick={() => navigate("/customer/search")}
             >
-              All
+              <span className="material-symbols-outlined">search</span>
+              Search food
             </button>
-            {cuisineOptions.map((c) => (
-              <button
-                key={c}
-                type="button"
-                className={`cd-browse-cuisine-chip ${cuisineFilter === c ? "cd-browse-cuisine-chip-active" : ""}`}
-                onClick={() => setCuisineFilter(c === cuisineFilter ? "" : c)}
-              >
-                {c}
-              </button>
-            ))}
-          </section>
-          <section className="cd-browse-filter-section">
-            <h3>Status</h3>
-            <label className="cd-browse-check">
-              <input
-                type="checkbox"
-                checked={filter === "open"}
-                onChange={(e) => setFilter(e.target.checked ? "open" : "all")}
-              />
-              Open for orders
-            </label>
-          </section>
-        </aside>
-
-        <section className="cd-browse-main">
-          {error ? <div className="cd-alert-error">{error}</div> : null}
-
-          {activeOrder ? (
-            <div className="cd-active-banner">
-              <div>
-                <p className="cd-active-banner-label">Order in progress</p>
-                <p className="cd-active-banner-text">
-                  {nameById[String(activeOrder.restaurantId)] || "Restaurant"} ·{" "}
-                  {statusLabel(activeOrder.status)} · $
-                  {Number(activeOrder.totalAmount).toFixed(2)}
-                </p>
-              </div>
-              <Link to={`/customer/orders/${activeOrder._id}`} className="cd-btn-outline">
-                Track order
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </Link>
-            </div>
-          ) : null}
-
-          <div className="cd-hero-promo">
-            <div className="cd-hero-promo-content">
-              <span className="cd-hero-promo-badge">Welcome</span>
-              <h1>Order from local restaurants</h1>
-              <p>Browse menus, add to your cart, and track delivery in real time.</p>
-              <Link to="/customer/orders" className="cd-hero-promo-btn">
-                View your orders
-              </Link>
-            </div>
+            <button
+              type="button"
+              className="cd-quick-link"
+              onClick={() => navigate("/customer/restaurants")}
+            >
+              <span className="material-symbols-outlined">storefront</span>
+              Browse restaurants
+            </button>
+            <button
+              type="button"
+              className="cd-quick-link"
+              onClick={() => navigate("/customer/orders")}
+            >
+              <span className="material-symbols-outlined">receipt_long</span>
+              My orders
+            </button>
+            <button
+              type="button"
+              className="cd-quick-link"
+              onClick={() => navigate("/setup/customer")}
+            >
+              <span className="material-symbols-outlined">settings</span>
+              Profile settings
+            </button>
           </div>
-
-          <div className="cd-browse-chips">
-            {FILTER_CHIPS.map((chip) => (
-              <button
-                key={chip.id}
-                type="button"
-                className={`cd-browse-chip ${filter === chip.id ? "cd-browse-chip-active" : ""}`}
-                onClick={() => setFilter(chip.id)}
-              >
-                {chip.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="cd-browse-section-head">
-            <h2>Restaurants near you</h2>
-            {!loading ? (
-              <span className="cd-browse-count">{filtered.length} places</span>
-            ) : null}
-          </div>
-
-          {loading ? (
-            <p className="cd-empty">Loading restaurants…</p>
-          ) : filtered.length === 0 ? (
-            <p className="cd-empty">No restaurants match your search. Try another filter.</p>
-          ) : (
-            <div className="cd-browse-grid" id="restaurants">
-              {filtered.map((r) => {
-                const img = resolveMediaUrl(r.image);
-                const isClosed = r.status === "closed";
-                return (
-                  <Link
-                    key={r.id}
-                    to={`/customer/restaurant/${r.id}`}
-                    className={`cd-browse-card ${isClosed ? "cd-browse-card-closed" : ""}`}
-                  >
-                    <div className="cd-browse-card-image">
-                      {img ? (
-                        <img src={img} alt="" />
-                      ) : (
-                        <div className="cd-browse-card-placeholder">
-                          <span className="material-symbols-outlined">restaurant</span>
-                        </div>
-                      )}
-                      {r.rating != null && r.rating > 0 ? (
-                        <span className="cd-browse-card-rating">
-                          <span
-                            className="material-symbols-outlined"
-                            style={{ fontVariationSettings: "'FILL' 1" }}
-                          >
-                            star
-                          </span>
-                          {Number(r.rating).toFixed(1)}
-                        </span>
-                      ) : null}
-                      {r.status === "open" ? (
-                        <span className="cd-browse-card-tag">Open</span>
-                      ) : r.status === "busy" ? (
-                        <span className="cd-browse-card-tag cd-browse-card-tag-busy">Busy</span>
-                      ) : null}
-                    </div>
-                    <div className="cd-browse-card-body">
-                      <div className="cd-browse-card-top">
-                        <h3>{r.name}</h3>
-                        <span className="cd-browse-card-price-hint">$$</span>
-                      </div>
-                      <p className="cd-browse-card-meta">
-                        {[r.cuisine, r.location].filter(Boolean).join(" · ")}
-                      </p>
-                      <p className="cd-browse-card-foot">
-                        <span>
-                          <span className="material-symbols-outlined">schedule</span>
-                          20–40 min
-                        </span>
-                        <span>
-                          <span className="material-symbols-outlined">delivery_dining</span>
-                          {isClosed ? "Closed" : "Delivery"}
-                        </span>
-                      </p>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </section>
+        </div>
       </div>
+
+      {featuredRestaurants.length > 0 ? (
+        <div className="cd-panel" style={{ marginTop: "1.5rem" }}>
+          <div className="cd-panel-header">
+            <h3 className="cd-panel-title">Popular near you</h3>
+          </div>
+          <div className="cd-restaurant-grid">
+            {featuredRestaurants.map((r) => (
+              <Link key={r.id} to={`/customer/restaurant/${r.id}`} className="cd-restaurant-card">
+                {r.image ? (
+                  <img src={resolveMediaUrl(r.image) || r.image} alt="" />
+                ) : (
+                  <div className="cd-restaurant-card-placeholder">
+                    <span className="material-symbols-outlined">restaurant</span>
+                  </div>
+                )}
+                <div className="cd-restaurant-card-body">
+                  <h4>{r.name}</h4>
+                  <p>
+                    {r.location}
+                    {r.rating != null ? ` · ★ ${r.rating}` : ""}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </CustomerLayout>
   );
 }

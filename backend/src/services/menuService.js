@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const MenuItem = require("../models/MenuItem");
 const Category = require("../models/Category");
+const RestaurantProfile = require("../models/RestaurantProfile");
 
 const createError = (message, statusCode) => {
   const error = new Error(message);
@@ -160,6 +161,56 @@ const getMenuByRestaurant = async (restaurantId) => {
   }));
 };
 
+const searchMenuItemsForCustomer = async (query) => {
+  const q = String(query || "").trim();
+  if (!q) {
+    return [];
+  }
+
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(escaped, "i");
+
+  const items = await MenuItem.find({
+    isAvailable: true,
+    $or: [{ name: regex }, { description: regex }],
+  })
+    .populate({ path: "categoryId", select: "name" })
+    .sort({ name: 1 })
+    .limit(60)
+    .lean();
+
+  if (items.length === 0) {
+    return [];
+  }
+
+  const restaurantIds = [...new Set(items.map((item) => item.restaurantId))];
+  const profiles = await RestaurantProfile.find({ userId: { $in: restaurantIds } }).lean();
+  const profileByUserId = new Map(profiles.map((profile) => [String(profile.userId), profile]));
+
+  return items
+    .map((item) => {
+      const profile = profileByUserId.get(String(item.restaurantId));
+      if (!profile) return null;
+
+      return {
+        itemId: item._id,
+        name: item.name,
+        description: item.description || "",
+        price: item.price,
+        image: item.imageUrl || null,
+        category: item.categoryId?.name || null,
+        restaurant: {
+          id: profile.userId,
+          name: profile.restaurantName,
+          location: profile.location,
+          cuisine: profile.cuisineType || null,
+          status: profile.status || "open",
+        },
+      };
+    })
+    .filter(Boolean);
+};
+
 module.exports = {
   createMenuItem,
   getMenuItemsByRestaurant,
@@ -167,4 +218,5 @@ module.exports = {
   updateMenuItem,
   deleteMenuItem,
   getMenuByRestaurant,
+  searchMenuItemsForCustomer,
 };

@@ -218,7 +218,7 @@ function CustomerRestaurantMenu() {
 
   return (
     <CustomerLayout>
-      <Link to="/customer/dashboard" className="cd-browse-back">
+      <Link to="/customer/restaurants" className="cd-browse-back">
         <span className="material-symbols-outlined">arrow_back</span>
         All restaurants
       </Link>

@@ -24,6 +24,13 @@ router.get(
   menuController.getMenuByRestaurant
 );
 
+router.get(
+  "/search",
+  authMiddleware,
+  roleMiddleware(["customer"]),
+  menuController.searchMenuItems
+);
+
 router.get("/", authMiddleware, roleMiddleware(["restaurant"]), menuController.getMenuItemsByRestaurant);
 
 router.get("/:id", authMiddleware, roleMiddleware(["restaurant"]), menuController.getMenuItemById);
