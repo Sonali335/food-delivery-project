@@ -13,7 +13,7 @@
 | Document | Scope |
 | -------- | ----- |
 | [`API.md`](API.md) (this file) | Health, auth, profile |
-| [`restaurant.md`](restaurant.md) | Menu, categories, restaurant status & customer browse (`/api/menu`, `/api/category`, `/api/restaurant`) |
+| [`restaurant.md`](restaurant.md) | Menu, categories, restaurant status, geocoding, uploads & customer browse (`/api/menu`, `/api/category`, `/api/restaurant`, `/uploads`) |
 | [`driver.md`](driver.md) | Driver location (`/api/driver`) |
 | [`orders.md`](orders.md) | Order lifecycle (`/api/orders`) |
 
@@ -23,7 +23,8 @@
 | ------ | -------------- |
 | `/api/auth` | Signup, login, OTP, password reset |
 | `/api/customer` | Profile CRUD for all roles |
-| `/api/restaurant` | Restaurant operational status; customer restaurant browse |
+| `/api/restaurant` | Restaurant status, geocoding (settings map), customer restaurant browse |
+| `/uploads` | Static menu images when Cloudinary is not configured (no auth) |
 | `/api/menu`, `/api/category` | Restaurant menu management; customer menu browse |
 | `/api/driver` | Driver location |
 | `/api/orders` | Order lifecycle (create, list, status updates) |
@@ -577,11 +578,15 @@ Mongoose address field validation failures may surface as **500** depending on m
 
 **Request body**
 
-| Field            | Type   | Required |
-|-----------------|--------|----------|
-| `restaurantName`| string | yes      |
-| `phone`         | string | yes      |
-| `location`      | string | yes      |
+| Field            | Type    | Required | Notes |
+|-----------------|---------|----------|-------|
+| `restaurantName`| string  | yes      | Display name |
+| `phone`         | string  | yes      | Contact phone |
+| `location`      | string  | yes      | Full address shown to customers (composed from street/city/country in the UI) |
+| `cuisineType`   | string  | no       | Empty or omitted → stored as `null` |
+| `openingHours`  | string  | no       | JSON string (weekly hours object from settings); empty → `null` |
+| `locationLat`   | number  | no       | Map pin latitude; send with `locationLng` to set or update |
+| `locationLng`   | number  | no       | Map pin longitude; send `null` for both fields to clear coordinates |
 
 **Example request**
 
@@ -589,7 +594,11 @@ Mongoose address field validation failures may surface as **500** depending on m
 {
   "restaurantName": "Pizza Place",
   "phone": "+15551112222",
-  "location": "123 Food Court"
+  "location": "123 Main Street, Brampton, Ontario L6V 4L5, Canada",
+  "cuisineType": "Italian",
+  "openingHours": "{\"monday\":{\"open\":true,\"start\":\"09:00\",\"end\":\"22:00\"}}",
+  "locationLat": 43.70636,
+  "locationLng": -79.78252
 }
 ```
 
@@ -605,9 +614,12 @@ Mongoose address field validation failures may surface as **500** depending on m
     "userId": "…",
     "restaurantName": "Pizza Place",
     "phone": "+15551112222",
-    "location": "123 Food Court",
-    "cuisineType": null,
-    "openingHours": null,
+    "location": "123 Main Street, Brampton, Ontario L6V 4L5, Canada",
+    "locationLat": 43.70636,
+    "locationLng": -79.78252,
+    "cuisineType": "Italian",
+    "openingHours": "{…}",
+    "status": "open",
     "ratingAverage": 0,
     "ratingCount": 0,
     "createdAt": "…",
@@ -617,11 +629,14 @@ Mongoose address field validation failures may surface as **500** depending on m
 }
 ```
 
+Map coordinates are optional; the settings UI uses **`GET /api/restaurant/geocode`** and **`GET /api/restaurant/reverse-geocode`** (see [`restaurant.md`](restaurant.md#location-geocoding-restaurant-settings)) to sync address text and pin.
+
 **Service validation failures**
 
 | Typical status | `message` |
 |----------------|-----------|
 | **400** | `"restaurantName, phone, location are required"` |
+| **400** | `"locationLat and locationLng must be valid numbers"` |
 
 ---
 
@@ -706,6 +721,8 @@ Mongoose address field validation failures may surface as **500** depending on m
 | Method   | Path | Auth | Purpose |
 |----------|------|------|---------|
 | `GET` / `PATCH` | `/api/restaurant/status` | Bearer JWT, role `restaurant` | Read / update operational status |
+| `GET` | `/api/restaurant/geocode` | Bearer JWT, role `restaurant` | Forward geocode address → `lat`, `lng`, `label` |
+| `GET` | `/api/restaurant/reverse-geocode` | Bearer JWT, role `restaurant` | Reverse geocode `lat`, `lng` → `label`, optional `address` parts |
 | `GET` | `/api/restaurant` | Bearer JWT, role `customer` | List restaurants (browse) |
 | `GET` | `/api/restaurant/:id` | Bearer JWT, role `customer` | Get one restaurant by user `_id` |
 | `POST` / `GET` | `/api/category/` | Bearer JWT, role `restaurant` | Create / list categories |
@@ -713,7 +730,8 @@ Mongoose address field validation failures may surface as **500** depending on m
 | `POST` / `GET` | `/api/menu/` | Bearer JWT, role `restaurant` | Create / list menu items |
 | `GET` | `/api/menu/restaurant/:restaurantId` | Bearer JWT, role `customer` | Browse available menu for a restaurant |
 | `GET` / `PATCH` / `DELETE` | `/api/menu/:id` | Bearer JWT, role `restaurant` | Read / update / delete menu item |
-| `POST` | `/api/menu/upload-image` | Bearer JWT, role `restaurant` | Upload menu image (Cloudinary) |
+| `POST` | `/api/menu/upload-image` | Bearer JWT, role `restaurant` | Upload menu image (Cloudinary or local `/uploads`) |
+| `GET` | `/uploads/**` | none | Static menu image files (when not using Cloudinary) |
 
 ### Driver (`driver.md`)
 
@@ -765,7 +783,11 @@ If SMTP is **not** configured, OTP values are **not** emailed; the server logs a
 
 **Cloudinary (menu images)**
 
-- **`CLOUDINARY_CLOUD_NAME`**, **`CLOUDINARY_API_KEY`**, **`CLOUDINARY_API_SECRET`** — required for `POST /api/menu/upload-image`.
+- **`CLOUDINARY_CLOUD_NAME`**, **`CLOUDINARY_API_KEY`**, **`CLOUDINARY_API_SECRET`** — optional. When set, `POST /api/menu/upload-image` uploads to Cloudinary. When unset, images are stored under **`backend/uploads/menu/`** and served at **`/uploads/menu/...`** (see [`restaurant.md`](restaurant.md#post-apimenuupload-image)).
+
+**Geocoding (restaurant settings)**
+
+- No API keys. Uses public Nominatim endpoints from the server (`backend/src/services/geocodeService.js`). Keep request volume low in production.
 
 **Real-time (Socket.io)**
 

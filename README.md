@@ -74,7 +74,7 @@ npm run dev
 npm run dev
 ```
 
-Vite proxies **`/api`** and **`/socket.io`** to `http://localhost:5000` by default. In production, set `VITE_API_BASE_URL` to your deployed API origin (same host Socket.io uses).
+Vite proxies **`/api`**, **`/uploads`**, and **`/socket.io`** to `http://localhost:5000` by default. In production, set `VITE_API_BASE_URL` to your deployed API origin (same host Socket.io uses).
 
 ## Environment
 
@@ -89,7 +89,7 @@ Copy from `backend/.env.example`.
 | `SMTP_USER`, `SMTP_PASS` | For real email | OTP signup and password reset emails |
 | `SMTP_SERVICE` | Optional | e.g. `gmail` (see `.env.example` for App Password steps) |
 | `GOOGLE_CLIENT_ID` | Optional | `POST /api/auth/google` |
-| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Optional | `POST /api/menu/upload-image` |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Optional | Menu images: Cloudinary when set; otherwise saved under `backend/uploads/` and served at `/uploads/` |
 | `MONGO_USE_SYSTEM_DNS` | Optional | Set to `1` on Windows if SRV DNS issues persist |
 | `PORT` | Optional | API port (default `5000`) |
 

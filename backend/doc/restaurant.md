@@ -10,7 +10,7 @@ Every route below requires **`Authorization: Bearer <JWT>`**.
 
 | Route group | Required role |
 | ----------- | ------------- |
-| Status, categories, menu CRUD, image upload | `restaurant` |
+| Status, geocoding, categories, menu CRUD, image upload | `restaurant` |
 | `GET /api/restaurant`, `GET /api/restaurant/:id` | `customer` |
 | `GET /api/menu/restaurant/:restaurantId` | `customer` |
 
@@ -69,6 +69,83 @@ Allowed values: `"open"`, `"closed"`, `"busy"`.
 ```
 
 **Errors:** `400` if `status` is missing or invalid; `404` if profile not found.
+
+---
+
+## Location geocoding (restaurant settings)
+
+Used by the restaurant settings UI to place the store on a map. Geocoding is performed server-side via [Nominatim](https://nominatim.org/) (OpenStreetMap). Respect their [usage policy](https://operations.osmfoundation.org/policies/nominatim/) (low request rate, valid `User-Agent`).
+
+Requires JWT with role **`restaurant`**.
+
+### `GET /api/restaurant/geocode`
+
+Forward geocode: convert a free-text address into coordinates.
+
+**Query parameters**
+
+| Param | Type | Required | Notes |
+| ----- | ---- | -------- | ----- |
+| `location` | string | yes | Address text (max 300 characters) |
+
+**Example:** `GET /api/restaurant/geocode?location=123%20Main%20St,%20Brampton,%20ON`
+
+**Response (200):**
+
+```json
+{
+  "lat": 43.70636,
+  "lng": -79.78252,
+  "label": "123 Main Street, Brampton, Ontario, Canada"
+}
+```
+
+| Field | Notes |
+| ----- | ----- |
+| `lat` | Latitude (number) |
+| `lng` | Longitude (number) |
+| `label` | Human-readable place name from Nominatim |
+
+**Errors:** `400` if `location` is missing or too long; `404` if no match; `502` if Nominatim is unavailable.
+
+---
+
+### `GET /api/restaurant/reverse-geocode`
+
+Reverse geocode: convert map coordinates into an address label (and optional structured parts for the settings form).
+
+**Query parameters**
+
+| Param | Type | Required | Notes |
+| ----- | ---- | -------- | ----- |
+| `lat` | number | yes | Latitude (`-90` … `90`) |
+| `lng` | number | yes | Longitude (`-180` … `180`) |
+
+**Example:** `GET /api/restaurant/reverse-geocode?lat=43.70636&lng=-79.78252`
+
+**Response (200):**
+
+```json
+{
+  "lat": 43.70636,
+  "lng": -79.78252,
+  "label": "123 Main Street, Brampton, Peel Region, Ontario, L6V 4L5, Canada",
+  "address": {
+    "street": "123 Main Street",
+    "street2": "",
+    "city": "Brampton",
+    "state": "Ontario",
+    "postalCode": "L6V 4L5",
+    "country": "Canada"
+  }
+}
+```
+
+`address` may be `null` if Nominatim returns no structured breakdown; `label` is always set on success.
+
+**Errors:** `400` if `lat`/`lng` are invalid or out of range; `404` if no address for the point; `502` if Nominatim is unavailable.
+
+**Note:** Register routes **`/geocode`** and **`/reverse-geocode`** before **`/:id`** in the router so `id` is not parsed as `"geocode"`.
 
 ---
 
@@ -312,9 +389,16 @@ Deletes a menu item owned by this restaurant.
 
 ### `POST /api/menu/upload-image`
 
-Uploads an image to **Cloudinary** (server-side). Requires env vars: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
+Uploads a menu item image (server-side). Accepts **`multipart/form-data`** with a single file field named **`file`**.
 
-Accepts **`multipart/form-data`** with a single file field named **`file`**.
+**Storage behavior**
+
+| Configuration | Behavior |
+| ------------- | -------- |
+| `CLOUDINARY_*` env vars set | Upload to Cloudinary folder **`food-delivery/menu`**; returns HTTPS `secure_url` |
+| Cloudinary **not** configured | Saves under **`backend/uploads/menu/`**; returns a relative URL such as `/uploads/menu/<filename>` |
+
+Relative URLs are served by the API at **`GET /uploads/...`** (`express.static` on `backend/uploads`). In development, the Vite dev server proxies **`/uploads`** to the backend (see root `README.md`).
 
 **Response (200):**
 
@@ -322,15 +406,26 @@ Accepts **`multipart/form-data`** with a single file field named **`file`**.
 { "url": "https://res.cloudinary.com/.../image.jpg" }
 ```
 
-The value is Cloudinary’s **`secure_url`** (exposed as `url` for the frontend).
+or (local dev):
+
+```json
+{ "url": "/uploads/menu/1717000000000-abc123.jpg" }
+```
+
+Store the returned `url` on the menu item as **`imageUrl`** when creating or updating items.
 
 **Errors:**
 
 - `400` if no file (`{ "message": "File is required" }`)
-- `503` if Cloudinary is not configured (`"Image upload is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET."`)
 - `500` if the upload fails
 
-Uploaded images are stored under Cloudinary folder **`food-delivery/menu`**.
+---
+
+## Static uploads
+
+| Method | Path | Auth | Purpose |
+| ------ | ---- | ---- | ------- |
+| `GET` | `/uploads/**` | none | Serve files saved when Cloudinary is not configured (menu images) |
 
 ---
 
@@ -338,9 +433,10 @@ Uploaded images are stored under Cloudinary folder **`food-delivery/menu`**.
 
 | Module | Role | Endpoints |
 | ------ | ---- | --------- |
-| `frontend/src/api/restaurant.js` | restaurant / customer | `getStatus`, `updateStatus`, `getAllRestaurants`, `getRestaurant` |
+| `frontend/src/api/restaurant.js` | restaurant / customer | `getStatus`, `updateStatus`, `geocodeRestaurantLocation`, `reverseGeocodeRestaurantLocation`, `getAllRestaurants`, `getRestaurant` |
 | `frontend/src/api/menu.js` | restaurant / customer | `getMenuItems`, `getMenuByRestaurant`, CRUD, `uploadMenuImage` |
 | `frontend/src/api/category.js` | restaurant | category CRUD |
+| `frontend/src/api/profile.js` | all roles | `getProfile`, `completeRestaurantProfile`, etc. (mounted at `/api/customer`) |
 
 ---
 
@@ -352,7 +448,7 @@ Failures typically return JSON:
 { "message": "Human-readable reason" }
 ```
 
-Status codes: **400** validation, **401** unauthorized, **403** forbidden role, **404** not found, **500** unexpected server error.
+Status codes: **400** validation, **401** unauthorized, **403** forbidden role, **404** not found, **502** upstream geocoding failure, **500** unexpected server error.
 
 ---
 
@@ -360,4 +456,4 @@ Status codes: **400** validation, **401** unauthorized, **403** forbidden role, 
 
 - **`MenuItem`:** `restaurantId` (ref `User`), `name`, `description`, `price`, `categoryId` (ref `Category`), optional `imageUrl`, `isAvailable`, timestamps.
 - **`Category`:** `restaurantId` (ref `User`), `name`, timestamps.
-- **`RestaurantProfile`:** includes `status` (`open` | `closed` | `busy`); status APIs read/update this document for the authenticated restaurant user.
+- **`RestaurantProfile`:** `userId`, `restaurantName`, `phone`, `location` (display address string), optional `locationLat` / `locationLng` (map pin), optional `cuisineType`, optional `openingHours` (JSON string, e.g. weekly schedule from settings), `status` (`open` | `closed` | `busy`), `ratingAverage`, `ratingCount`, timestamps. Profile upsert via **`POST /api/customer/complete`** — see [`API.md`](API.md#restaurant-body).
