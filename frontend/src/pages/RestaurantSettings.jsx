@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   completeRestaurantProfile,
@@ -8,58 +8,36 @@ import {
 } from "../api/profile";
 import PasswordUpdateFields from "../components/PasswordUpdateFields";
 import { useRestaurantProfile } from "../components/restaurant/RestaurantProfileContext";
+import {
+  WEEKDAYS,
+  hoursStatusHint,
+  isOpenByHours,
+  parseOpeningHours,
+} from "../utils/restaurantHours";
 
-const WEEKDAYS = [
-  { key: "monday", label: "Monday" },
-  { key: "tuesday", label: "Tuesday" },
-  { key: "wednesday", label: "Wednesday" },
-  { key: "thursday", label: "Thursday" },
-  { key: "friday", label: "Friday" },
-  { key: "saturday", label: "Saturday" },
-  { key: "sunday", label: "Sunday" },
+const STATUS_OPTIONS = [
+  { value: "open", label: "Open", icon: "check_circle" },
+  { value: "busy", label: "Busy", icon: "schedule" },
+  { value: "closed", label: "Closed", icon: "block" },
 ];
-
-const defaultDayHours = () => ({
-  open: true,
-  start: "09:00",
-  end: "22:00",
-});
-
-function parseOpeningHours(raw) {
-  if (!raw || typeof raw !== "string") {
-    return Object.fromEntries(WEEKDAYS.map((d) => [d.key, defaultDayHours()]));
-  }
-  try {
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object") {
-      return Object.fromEntries(
-        WEEKDAYS.map((d) => [
-          d.key,
-          {
-            open: parsed[d.key]?.open !== false,
-            start: parsed[d.key]?.start || "09:00",
-            end: parsed[d.key]?.end || "22:00",
-          },
-        ])
-      );
-    }
-  } catch {
-    /* legacy plain text */
-  }
-  return Object.fromEntries(WEEKDAYS.map((d) => [d.key, defaultDayHours()]));
-}
 
 function statusVisibilityLabel(status) {
   const s = (status || "open").toLowerCase();
-  if (s === "open") return { pill: "Live", sub: "Currently Open", accepting: true };
-  if (s === "busy") return { pill: "Busy", sub: "Limited availability", accepting: true };
-  return { pill: "Hidden", sub: "Currently Closed", accepting: false };
+  if (s === "open") return { pill: "Live", sub: "Currently Open" };
+  if (s === "busy") return { pill: "Busy", sub: "Limited availability" };
+  return { pill: "Hidden", sub: "Currently Closed" };
 }
 
 function RestaurantSettings() {
   const navigate = useNavigate();
-  const { setRestaurantName: setShellRestaurantName, applyStatus, setStatus: setShellStatus } =
-    useRestaurantProfile();
+  const {
+    status,
+    setRestaurantName: setShellRestaurantName,
+    applyStatus,
+    statusSaving,
+    statusLoading,
+  } = useRestaurantProfile();
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -72,12 +50,31 @@ function RestaurantSettings() {
   const [locationText, setLocationText] = useState("");
   const [phone, setPhone] = useState("");
   const [hours, setHours] = useState(() => parseOpeningHours(null));
-  const [status, setStatus] = useState("open");
-  const [acceptingOrders, setAcceptingOrders] = useState(true);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const statusSyncing = useRef(false);
+
+  const normalizedStatus = (status || "open").toLowerCase();
+  const scheduleOpen = useMemo(() => isOpenByHours(hours), [hours]);
+  const hoursHint = useMemo(() => hoursStatusHint(hours), [hours]);
+  const vis = statusVisibilityLabel(normalizedStatus);
+  const statusBusy = statusSaving || statusLoading;
+
+  const enforceClosedOutsideHours = async () => {
+    if (scheduleOpen || normalizedStatus === "closed") return;
+    if (statusSyncing.current) return;
+    statusSyncing.current = true;
+    try {
+      await applyStatus("closed");
+    } catch (e) {
+      setError(e.message || "Could not update status");
+    } finally {
+      statusSyncing.current = false;
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -90,9 +87,6 @@ function RestaurantSettings() {
         setPhone(profile.phone ?? "");
         setLocationText(profile.location ?? "");
         setHours(parseOpeningHours(profile.openingHours));
-        const s = (profile.status || "open").toLowerCase();
-        setStatus(s);
-        setAcceptingOrders(s !== "closed");
       } catch (e) {
         if (!cancelled) setError(e.message || "Failed to load settings");
       } finally {
@@ -104,16 +98,31 @@ function RestaurantSettings() {
     };
   }, []);
 
+  useEffect(() => {
+    if (loading) return;
+    enforceClosedOutsideHours();
+  }, [loading, scheduleOpen, hours, normalizedStatus]);
+
+  useEffect(() => {
+    if (loading) return;
+    const id = setInterval(() => {
+      enforceClosedOutsideHours();
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [loading, scheduleOpen, hours, normalizedStatus]);
+
   const updateDay = (key, patch) => {
     setHours((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
   };
 
-  const handleAcceptingToggle = (checked) => {
-    setAcceptingOrders(checked);
-    if (!checked) {
-      setStatus("closed");
-    } else if (status === "closed") {
-      setStatus("open");
+  const handleStatusPick = async (next) => {
+    if (next === normalizedStatus || statusBusy) return;
+    if ((next === "open" || next === "busy") && !scheduleOpen) return;
+    setError("");
+    try {
+      await applyStatus(next);
+    } catch (e) {
+      setError(e.message || "Could not update status");
     }
   };
 
@@ -140,10 +149,11 @@ function RestaurantSettings() {
         newPassword,
         confirmPassword,
       });
-      const nextStatus = acceptingOrders ? (status === "closed" ? "open" : status) : "closed";
-      await applyStatus(nextStatus);
-      setStatus(nextStatus);
-      setShellStatus(nextStatus);
+
+      if (!scheduleOpen && normalizedStatus !== "closed") {
+        await applyStatus("closed");
+      }
+
       const trimmedName = restaurantName.trim();
       await completeRestaurantProfile({
         restaurantName: trimmedName,
@@ -183,8 +193,6 @@ function RestaurantSettings() {
     }
   };
 
-  const vis = statusVisibilityLabel(status);
-
   if (loading) {
     return <p className="rd-empty">Loading settings…</p>;
   }
@@ -214,97 +222,100 @@ function RestaurantSettings() {
       {deleteError ? <div className="rd-alert-error">{deleteError}</div> : null}
 
       <form className="rd-set-grid" onSubmit={handleSave}>
-        <div className="rd-set-top-row">
-          <section className="rd-set-card rd-set-card-info">
-            <div className="rd-set-card-head">
-              <div className="rd-set-icon-wrap rd-set-icon-green">
-                <span className="material-symbols-outlined">restaurant</span>
-              </div>
-              <h3 className="rd-set-card-title">Restaurant Information</h3>
+        <section className="rd-set-card rd-set-card-hero">
+          <div className="rd-set-card-head">
+            <div className="rd-set-icon-wrap rd-set-icon-green">
+              <span className="material-symbols-outlined">restaurant</span>
             </div>
-            <div className="rd-set-form-grid">
-              <div className="rd-set-field">
-                <label htmlFor="restaurantName">Restaurant Name</label>
-                <input
-                  id="restaurantName"
-                  type="text"
-                  value={restaurantName}
-                  onChange={(e) => setRestaurantName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="rd-set-field">
-                <label htmlFor="cuisineType">Cuisine Type</label>
-                <input
-                  id="cuisineType"
-                  type="text"
-                  value={cuisineType}
-                  onChange={(e) => setCuisineType(e.target.value)}
-                  placeholder="e.g. Italian, Organic"
-                />
-              </div>
-              <div className="rd-set-field">
-                <label htmlFor="phone">Phone Number</label>
-                <input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="rd-set-field">
-                <label htmlFor="location">Location / Address</label>
-                <input
-                  id="location"
-                  type="text"
-                  value={locationText}
-                  onChange={(e) => setLocationText(e.target.value)}
-                  placeholder="City, area, or full address"
-                  required
-                />
-              </div>
+            <h3 className="rd-set-card-title">Restaurant Information</h3>
+          </div>
+          <div className="rd-set-form-grid">
+            <div className="rd-set-field">
+              <label htmlFor="restaurantName">Restaurant Name</label>
+              <input
+                id="restaurantName"
+                type="text"
+                value={restaurantName}
+                onChange={(e) => setRestaurantName(e.target.value)}
+                required
+              />
             </div>
-          </section>
+            <div className="rd-set-field">
+              <label htmlFor="cuisineType">Cuisine Type</label>
+              <input
+                id="cuisineType"
+                type="text"
+                value={cuisineType}
+                onChange={(e) => setCuisineType(e.target.value)}
+                placeholder="e.g. Italian, Organic"
+              />
+            </div>
+            <div className="rd-set-field">
+              <label htmlFor="phone">Phone Number</label>
+              <input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+              />
+            </div>
+            <div className="rd-set-field">
+              <label htmlFor="location">Location / Address</label>
+              <input
+                id="location"
+                type="text"
+                value={locationText}
+                onChange={(e) => setLocationText(e.target.value)}
+                placeholder="City, area, or full address"
+                required
+              />
+            </div>
+          </div>
 
-          <section className="rd-set-card rd-set-card-vis">
-            <div className="rd-set-vis-head">
-              <h3 className="rd-set-card-title-sm">Store Visibility</h3>
-              <span className={`rd-set-live-pill rd-set-live-pill-${status}`}>{vis.pill}</span>
-            </div>
-            <div className="rd-set-toggle-row">
-              <div className="rd-set-toggle-label">
-                <span className="material-symbols-outlined">storefront</span>
-                <span>Accepting Orders</span>
+          <div className="rd-set-visibility">
+            <div className="rd-set-visibility-head">
+              <div>
+                <h4 className="rd-set-visibility-title">Customer-facing status</h4>
+                <p className="rd-set-visibility-hint">
+                  <span className="material-symbols-outlined">schedule</span>
+                  {hoursHint}
+                  {!scheduleOpen ? " · Closed until hours begin." : ""}
+                </p>
               </div>
-              <label className="rd-set-switch">
-                <input
-                  type="checkbox"
-                  checked={acceptingOrders}
-                  onChange={(e) => handleAcceptingToggle(e.target.checked)}
-                />
-                <span className="rd-set-switch-track" />
-              </label>
+              <span className={`rd-set-live-pill rd-set-live-pill-${normalizedStatus}`}>
+                {vis.pill}
+              </span>
             </div>
-            <p className="rd-set-toggle-hint">
-              Switching this off sets your store to closed and hides you from new customer orders.
+
+            <div className="rd-set-status-chips" role="group" aria-label="Store status">
+              {STATUS_OPTIONS.map((opt) => {
+                const active = normalizedStatus === opt.value;
+                const disabled =
+                  statusBusy ||
+                  (opt.value !== "closed" && !scheduleOpen);
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`rd-set-status-chip rd-set-status-chip-${opt.value} ${
+                      active ? "rd-set-status-chip-active" : ""
+                    }`}
+                    disabled={disabled}
+                    aria-pressed={active}
+                    onClick={() => handleStatusPick(opt.value)}
+                  >
+                    <span className="material-symbols-outlined">{opt.icon}</span>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="rd-set-visibility-foot">
+              Updates the header immediately. Outside operating hours, only Closed is available.
             </p>
-            <div className="rd-set-status-row">
-              <label htmlFor="storeStatus">Operational status</label>
-              <select
-                id="storeStatus"
-                value={status}
-                disabled={!acceptingOrders}
-                onChange={(e) => setStatus(e.target.value)}
-              >
-                <option value="open">Open</option>
-                <option value="busy">Busy</option>
-                <option value="closed">Closed</option>
-              </select>
-              <p className="rd-set-status-sub">{vis.sub}</p>
-            </div>
-          </section>
-        </div>
+          </div>
+        </section>
 
         <section className="rd-set-card rd-set-card-half">
           <div className="rd-set-card-head">

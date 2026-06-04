@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import RestaurantStatusSelect from "./RestaurantStatusSelect";
 import "./restaurant-dashboard.css";
 
 function RestaurantShell({
@@ -30,26 +31,13 @@ function RestaurantShell({
         <span className="rd-topbar-brand">Restaurant Portal</span>
         <div className="rd-topbar-actions">
           {onSetStatus ? (
-            <label className="rd-topbar-status-select-wrap">
-              <span
-                className={`rd-topbar-status-select-inner rd-topbar-status-select-inner-${normalizedStatus}`}
-              >
-                <select
-                  className="rd-topbar-status-select"
-                  value={normalizedStatus}
-                  disabled={statusSaving || statusLoading}
-                  onChange={(e) => onSetStatus(e.target.value)}
-                  aria-label="Restaurant status"
-                >
-                  <option value="open">Open</option>
-                  <option value="busy">Busy</option>
-                  <option value="closed">Closed</option>
-                </select>
-                <span className="material-symbols-outlined rd-topbar-status-chevron" aria-hidden>
-                  expand_more
-                </span>
-              </span>
-            </label>
+            <RestaurantStatusSelect
+              className="rd-topbar-status-select-wrap"
+              value={normalizedStatus}
+              disabled={statusSaving || statusLoading}
+              onChange={onSetStatus}
+              aria-label="Restaurant status"
+            />
           ) : (
             <span className={`rd-status-pill rd-status-pill-${normalizedStatus}`}>
               {normalizedStatus}
