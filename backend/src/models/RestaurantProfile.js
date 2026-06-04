@@ -11,6 +11,8 @@ const restaurantProfileSchema = new mongoose.Schema(
     restaurantName: { type: String, required: true },
     phone: { type: String, required: true },
     location: { type: String, required: true },
+    locationLat: { type: Number, default: null },
+    locationLng: { type: Number, default: null },
     cuisineType: { type: String, default: null },
     openingHours: { type: String, default: null },
     ratingAverage: { type: Number, default: 0 },

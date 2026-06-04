@@ -47,6 +47,39 @@ export const getRestaurant = async (id) => {
   return result;
 };
 
+export const geocodeRestaurantLocation = async (location) => {
+  const params = new URLSearchParams({ location });
+  const response = await fetch(`${getApiBase()}/api/restaurant/geocode?${params}`, {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+    },
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.message || "Could not geocode location");
+  }
+  return result;
+};
+
+export const reverseGeocodeRestaurantLocation = async (lat, lng) => {
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lng: String(lng),
+  });
+  const response = await fetch(`${getApiBase()}/api/restaurant/reverse-geocode?${params}`, {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+    },
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.message || "Could not resolve address");
+  }
+  return result;
+};
+
 export const updateStatus = async (status) => {
   const response = await fetch(`${getApiBase()}/api/restaurant/status`, {
     method: "PATCH",

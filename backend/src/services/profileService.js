@@ -49,7 +49,8 @@ const completeDriverProfile = async (userId, payload) => {
 };
 
 const completeRestaurantProfile = async (userId, payload) => {
-  const { restaurantName, phone, location, cuisineType, openingHours } = payload;
+  const { restaurantName, phone, location, cuisineType, openingHours, locationLat, locationLng } =
+    payload;
 
   if (!restaurantName || !phone || !location) {
     throw createError("restaurantName, phone, location are required", 400);
@@ -61,6 +62,21 @@ const completeRestaurantProfile = async (userId, payload) => {
     phone,
     location,
   };
+
+  if (locationLat !== undefined && locationLng !== undefined) {
+    const lat = locationLat === null || locationLat === "" ? null : Number(locationLat);
+    const lng = locationLng === null || locationLng === "" ? null : Number(locationLng);
+    if (lat != null && lng != null) {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        throw createError("locationLat and locationLng must be valid numbers", 400);
+      }
+      update.locationLat = lat;
+      update.locationLng = lng;
+    } else {
+      update.locationLat = null;
+      update.locationLng = null;
+    }
+  }
 
   if (cuisineType !== undefined) {
     update.cuisineType =

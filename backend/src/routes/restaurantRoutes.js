@@ -20,6 +20,20 @@ router.patch(
 );
 
 router.get(
+  "/geocode",
+  authMiddleware,
+  roleMiddleware(["restaurant"]),
+  restaurantController.geocodeRestaurantLocation
+);
+
+router.get(
+  "/reverse-geocode",
+  authMiddleware,
+  roleMiddleware(["restaurant"]),
+  restaurantController.reverseGeocodeRestaurantLocation
+);
+
+router.get(
   "/",
   authMiddleware,
   roleMiddleware(["customer"]),

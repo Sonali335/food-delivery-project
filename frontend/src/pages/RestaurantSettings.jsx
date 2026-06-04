@@ -7,7 +7,13 @@ import {
   tryPasswordUpdateIfFilled,
 } from "../api/profile";
 import PasswordUpdateFields from "../components/PasswordUpdateFields";
+import RestaurantLocationPicker from "../components/restaurant/RestaurantLocationPicker";
 import { useRestaurantProfile } from "../components/restaurant/RestaurantProfileContext";
+import {
+  addressFromStoredLocation,
+  composeAddress,
+  isAddressComplete,
+} from "../utils/restaurantAddress";
 import {
   WEEKDAYS,
   hoursStatusHint,
@@ -47,7 +53,9 @@ function RestaurantSettings() {
 
   const [restaurantName, setRestaurantName] = useState("");
   const [cuisineType, setCuisineType] = useState("");
-  const [locationText, setLocationText] = useState("");
+  const [addressParts, setAddressParts] = useState(() => addressFromStoredLocation(""));
+  const [locationLat, setLocationLat] = useState(null);
+  const [locationLng, setLocationLng] = useState(null);
   const [phone, setPhone] = useState("");
   const [hours, setHours] = useState(() => parseOpeningHours(null));
 
@@ -85,7 +93,11 @@ function RestaurantSettings() {
         setRestaurantName(profile.restaurantName ?? "");
         setCuisineType(profile.cuisineType ?? "");
         setPhone(profile.phone ?? "");
-        setLocationText(profile.location ?? "");
+        setAddressParts(addressFromStoredLocation(profile.location ?? ""));
+        const lat = profile.locationLat;
+        const lng = profile.locationLng;
+        setLocationLat(Number.isFinite(lat) ? lat : null);
+        setLocationLng(Number.isFinite(lng) ? lng : null);
         setHours(parseOpeningHours(profile.openingHours));
       } catch (e) {
         if (!cancelled) setError(e.message || "Failed to load settings");
@@ -129,7 +141,9 @@ function RestaurantSettings() {
   const validate = () => {
     if (!restaurantName.trim()) return "Restaurant name is required.";
     if (!phone.trim()) return "Phone is required.";
-    if (!locationText.trim()) return "Location is required.";
+    if (!isAddressComplete(addressParts)) {
+      return "Street address, city, and country are required.";
+    }
     return null;
   };
 
@@ -158,7 +172,9 @@ function RestaurantSettings() {
       await completeRestaurantProfile({
         restaurantName: trimmedName,
         phone: phone.trim(),
-        location: locationText.trim(),
+        location: composeAddress(addressParts),
+        locationLat,
+        locationLng,
         cuisineType: cuisineType.trim(),
         openingHours: JSON.stringify(hours),
       });
@@ -229,7 +245,7 @@ function RestaurantSettings() {
             </div>
             <h3 className="rd-set-card-title">Restaurant Information</h3>
           </div>
-          <div className="rd-set-form-grid">
+          <div className="rd-set-form-grid rd-set-form-grid--info">
             <div className="rd-set-field">
               <label htmlFor="restaurantName">Restaurant Name</label>
               <input
@@ -260,64 +276,10 @@ function RestaurantSettings() {
                 required
               />
             </div>
-            <div className="rd-set-field">
-              <label htmlFor="location">Location / Address</label>
-              <input
-                id="location"
-                type="text"
-                value={locationText}
-                onChange={(e) => setLocationText(e.target.value)}
-                placeholder="City, area, or full address"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="rd-set-visibility">
-            <div className="rd-set-visibility-head">
-              <div>
-                <h4 className="rd-set-visibility-title">Customer-facing status</h4>
-                <p className="rd-set-visibility-hint">
-                  <span className="material-symbols-outlined">schedule</span>
-                  {hoursHint}
-                  {!scheduleOpen ? " · Closed until hours begin." : ""}
-                </p>
-              </div>
-              <span className={`rd-set-live-pill rd-set-live-pill-${normalizedStatus}`}>
-                {vis.pill}
-              </span>
-            </div>
-
-            <div className="rd-set-status-chips" role="group" aria-label="Store status">
-              {STATUS_OPTIONS.map((opt) => {
-                const active = normalizedStatus === opt.value;
-                const disabled =
-                  statusBusy ||
-                  (opt.value !== "closed" && !scheduleOpen);
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    className={`rd-set-status-chip rd-set-status-chip-${opt.value} ${
-                      active ? "rd-set-status-chip-active" : ""
-                    }`}
-                    disabled={disabled}
-                    aria-pressed={active}
-                    onClick={() => handleStatusPick(opt.value)}
-                  >
-                    <span className="material-symbols-outlined">{opt.icon}</span>
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="rd-set-visibility-foot">
-              Updates the header immediately. Outside operating hours, only Closed is available.
-            </p>
           </div>
         </section>
 
-        <section className="rd-set-card rd-set-card-half">
+        <section className="rd-set-card rd-set-card-half rd-set-card-hours">
           <div className="rd-set-card-head">
             <div className="rd-set-icon-wrap rd-set-icon-amber">
               <span className="material-symbols-outlined">schedule</span>
@@ -361,28 +323,86 @@ function RestaurantSettings() {
           </ul>
         </section>
 
-        <section className="rd-set-card rd-set-card-half rd-set-card-muted">
+        <section className="rd-set-card rd-set-card-half rd-set-card-status">
+          <div className="rd-set-card-head rd-set-card-head-compact">
+            <div className="rd-set-icon-wrap rd-set-icon-green">
+              <span className="material-symbols-outlined">storefront</span>
+            </div>
+            <div className="rd-set-card-head-text">
+              <h3 className="rd-set-card-title">Customer-facing status</h3>
+              <span className={`rd-set-live-pill rd-set-live-pill-${normalizedStatus}`}>
+                {vis.pill}
+              </span>
+            </div>
+          </div>
+          <div className="rd-set-status-body">
+          <div className="rd-set-visibility-head rd-set-visibility-head-compact">
+            <div>
+              <p className="rd-set-visibility-title">Store availability</p>
+              <p className="rd-set-visibility-hint">
+                <span className="material-symbols-outlined">schedule</span>
+                {hoursHint}
+                {!scheduleOpen ? " · Closed until hours begin." : ""}
+              </p>
+            </div>
+          </div>
+
+          <div className="rd-set-status-chips" role="group" aria-label="Store status">
+            {STATUS_OPTIONS.map((opt) => {
+              const active = normalizedStatus === opt.value;
+              const disabled =
+                statusBusy ||
+                (opt.value !== "closed" && !scheduleOpen);
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={`rd-set-status-chip rd-set-status-chip-${opt.value} ${
+                    active ? "rd-set-status-chip-active" : ""
+                  }`}
+                  disabled={disabled}
+                  aria-pressed={active}
+                  onClick={() => handleStatusPick(opt.value)}
+                >
+                  <span className="material-symbols-outlined">{opt.icon}</span>
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="rd-set-visibility-foot">
+            Updates the header immediately. Outside operating hours, only Closed is available.
+          </p>
+          </div>
+        </section>
+
+        <section className="rd-set-card rd-set-card-full">
           <div className="rd-set-card-head">
             <div className="rd-set-icon-wrap rd-set-icon-mint">
               <span className="material-symbols-outlined">map</span>
             </div>
-            <h3 className="rd-set-card-title">Delivery Logistics</h3>
-          </div>
-          <div className="rd-set-form-grid">
-            <div className="rd-set-field">
-              <label>Delivery Radius (km)</label>
-              <input type="number" disabled placeholder="8" />
-            </div>
-            <div className="rd-set-field">
-              <label>Minimum Order</label>
-              <input type="number" disabled placeholder="25" />
+            <div>
+              <h3 className="rd-set-card-title">Restaurant location</h3>
+              <p className="rd-set-card-subtitle">
+                Enter an address, use GPS, or click the map to place your pin. Save when finished.
+              </p>
             </div>
           </div>
-          <div className="rd-set-map-placeholder">
-            <span className="material-symbols-outlined">location_on</span>
-            <p>Delivery zone map — coming soon</p>
-            <p className="rd-set-map-sub">Primary service area: {locationText || "Not set"}</p>
-          </div>
+          <RestaurantLocationPicker
+            addressParts={addressParts}
+            lat={locationLat}
+            lng={locationLng}
+            onAddressPartsChange={setAddressParts}
+            onAddressPartsEdit={(next) => {
+              setAddressParts(next);
+              setLocationLat(null);
+              setLocationLng(null);
+            }}
+            onPositionChange={(nextLat, nextLng) => {
+              setLocationLat(nextLat);
+              setLocationLng(nextLng);
+            }}
+          />
         </section>
 
         <section className="rd-set-card rd-set-card-full">

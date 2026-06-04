@@ -1,4 +1,5 @@
 const restaurantService = require("../services/restaurantService");
+const { geocodeLocation, reverseGeocode } = require("../services/geocodeService");
 
 const getRestaurantStatus = async (req, res) => {
   try {
@@ -37,12 +38,34 @@ const getRestaurantById = async (req, res) => {
   }
 };
 
+const geocodeRestaurantLocation = async (req, res) => {
+  try {
+    const location = req.query.location;
+    const result = await geocodeLocation(location);
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
+const reverseGeocodeRestaurantLocation = async (req, res) => {
+  try {
+    const { lat, lng } = req.query;
+    const result = await reverseGeocode(lat, lng);
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
 const getStatus = getRestaurantStatus;
 
 module.exports = {
   getRestaurantStatus,
   getStatus,
   updateRestaurantStatus,
+  geocodeRestaurantLocation,
+  reverseGeocodeRestaurantLocation,
   getAllRestaurants,
   getRestaurantById,
 };
