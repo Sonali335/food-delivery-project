@@ -4,6 +4,8 @@ import { getRestaurant } from "../api/restaurant";
 import { getMenuByRestaurant } from "../api/menu";
 import { createOrder } from "../api/orders";
 import CustomerLayout from "../components/customer/CustomerLayout";
+import { loadStoredCart, saveStoredCart } from "../utils/customerCart";
+import { resolveMediaUrl } from "../utils/mediaUrl";
 import "../components/customer/customer-dashboard.css";
 
 const DELIVERY_FEE = 2.99;
@@ -42,7 +44,7 @@ function MenuItemCard({ item, onAdd }) {
   return (
     <article className="cd-menu-card">
       <div className="cd-menu-card-image">
-        {item.image ? <img src={item.image} alt="" /> : null}
+        {item.image ? <img src={resolveMediaUrl(item.image) || item.image} alt="" /> : null}
       </div>
       <div className="cd-menu-card-body">
         <div className="cd-menu-card-head">
@@ -65,7 +67,7 @@ function MenuItemRow({ item, onAdd }) {
   return (
     <article className="cd-menu-row">
       <div className="cd-menu-row-thumb">
-        {item.image ? <img src={item.image} alt="" /> : null}
+        {item.image ? <img src={resolveMediaUrl(item.image) || item.image} alt="" /> : null}
       </div>
       <div className="cd-menu-row-body">
         <div>
@@ -99,6 +101,17 @@ function CustomerRestaurantMenu() {
   const [activeCategory, setActiveCategory] = useState("");
 
   useEffect(() => {
+    const stored = loadStoredCart();
+    if (stored.restaurantId === id && stored.lines.length) {
+      setCart(stored.lines);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    saveStoredCart(id, cart);
+  }, [id, cart]);
+
+  useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError("");
@@ -106,7 +119,10 @@ function CustomerRestaurantMenu() {
       .then(([restaurantRes, menuRes]) => {
         if (cancelled) return;
         setRestaurant(restaurantRes.restaurant || null);
-        const list = menuRes.items || [];
+        const list = (menuRes.items || []).map((item) => ({
+          ...item,
+          image: resolveMediaUrl(item.image) || item.image,
+        }));
         setItems(list);
         const groups = groupItemsByCategory(list);
         if (groups.length > 0) setActiveCategory(groups[0].id);
@@ -190,6 +206,7 @@ function CustomerRestaurantMenu() {
           price,
         })),
       });
+      saveStoredCart(null, []);
       setCart([]);
       navigate("/customer/orders");
     } catch (e) {
@@ -201,7 +218,7 @@ function CustomerRestaurantMenu() {
 
   return (
     <CustomerLayout>
-      <Link to="/customer/restaurants" className="cd-browse-back">
+      <Link to="/customer/dashboard" className="cd-browse-back">
         <span className="material-symbols-outlined">arrow_back</span>
         All restaurants
       </Link>
@@ -240,7 +257,9 @@ function CustomerRestaurantMenu() {
           {/* Center: menu */}
           <section className="cd-menu-content">
             <div className="cd-menu-hero">
-              {restaurant.image ? <img src={restaurant.image} alt="" /> : null}
+              {restaurant.image ? (
+                <img src={resolveMediaUrl(restaurant.image) || restaurant.image} alt="" />
+              ) : null}
               <div className="cd-menu-hero-overlay" />
               <div className="cd-menu-hero-text">
                 <h2>{restaurant.name}</h2>
@@ -385,7 +404,7 @@ function CustomerRestaurantMenu() {
                   onClick={handlePlaceOrder}
                 >
                   <span className="material-symbols-outlined">shopping_bag</span>
-                  {placing ? "Placing order…" : "Place order"}
+                  {placing ? "Placing order…" : "Checkout"}
                 </button>
                 <p className="cd-menu-cart-hint">Taxes and fees may apply at checkout.</p>
               </div>
