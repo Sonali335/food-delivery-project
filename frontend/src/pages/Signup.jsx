@@ -83,15 +83,10 @@ function Signup() {
       theme: "outline",
       size: "large",
       text: "signup_with",
-      width: 400,
       locale: "en",
-    })
-      .then(() => {
-        if (cancelled) unmountGoogleSignInButton(host);
-      })
-      .catch(() => {
-        if (!cancelled) setError("Could not load Google Sign-In. Try again later.");
-      });
+    }).catch(() => {
+      if (!cancelled) setError("Could not load Google Sign-In. Try again later.");
+    });
 
     return () => {
       cancelled = true;
@@ -108,19 +103,17 @@ function Signup() {
       footerLinkTo="/login"
     >
       {googleClientId ? (
-        <>
+        <div className="auth-google-section">
           <div
             className="auth-google-block"
             ref={googleBtnRef}
             aria-busy={googleLoading}
           />
-          <p className="auth-env-hint auth-env-hint-center">
-            No email code needed — Google verifies your email.
-          </p>
+          <p className="auth-google-hint">No email code needed — Google verifies your email.</p>
           <div className="auth-divider">
             <span className="auth-divider-text">or sign up with email</span>
           </div>
-        </>
+        </div>
       ) : import.meta.env.DEV ? (
         <p className="auth-env-hint">
           Google sign-up is off until{" "}

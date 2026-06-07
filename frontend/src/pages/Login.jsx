@@ -69,15 +69,10 @@ function Login() {
       theme: "outline",
       size: "large",
       text: "continue_with",
-      width: 400,
       locale: "en",
-    })
-      .then(() => {
-        if (cancelled) unmountGoogleSignInButton(host);
-      })
-      .catch(() => {
-        if (!cancelled) setError("Could not load Google Sign-In. Try again later.");
-      });
+    }).catch(() => {
+      if (!cancelled) setError("Could not load Google Sign-In. Try again later.");
+    });
 
     return () => {
       cancelled = true;
@@ -170,12 +165,12 @@ function Login() {
       </form>
 
       {googleClientId ? (
-        <>
+        <div className="auth-google-section auth-google-section--login">
           <div className="auth-divider">
             <span className="auth-divider-text">or continue with</span>
           </div>
           <div className="auth-google-block" ref={googleBtnRef} aria-busy={googleLoading} />
-        </>
+        </div>
       ) : null}
     </AuthLayout>
   );
