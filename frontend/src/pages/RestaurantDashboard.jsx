@@ -1,15 +1,19 @@
-import { useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getRestaurantOrders, updateOrderStatus } from "../api/orders";
 import { connectSocket } from "../socket";
 import { useRestaurantProfile } from "../components/restaurant/RestaurantProfileContext";
+import {
+  computeRestaurantDashboardStats,
+  mergeOrderPatch,
+  mergeOrderRecord,
+} from "../utils/restaurantDashboardStats";
 import {
   canRestaurantCancel,
   orderStatusBadgeClass,
   orderStatusLabel,
   restaurantPrimaryAction,
   restaurantStatusHint,
-  RESTAURANT_ACTIVE_STATUSES,
 } from "../utils/orderStatus";
 
 const AVATAR_COLORS = [
@@ -18,17 +22,6 @@ const AVATAR_COLORS = [
   { bg: "#f3e8ff", text: "#7c3aed" },
   { bg: "#ffedd5", text: "#c2410c" },
 ];
-
-function isToday(iso) {
-  if (!iso) return false;
-  const d = new Date(iso);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
-}
 
 function formatItems(items) {
   if (!Array.isArray(items) || items.length === 0) return "—";
@@ -56,18 +49,6 @@ function statusBadgeClass(status) {
   return orderStatusBadgeClass(status, "rd-badge");
 }
 
-function computeStats(orders) {
-  const todayOrders = orders.filter((o) => isToday(o.createdAt));
-  const todayRevenue = todayOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
-  const activeCount = orders.filter((o) => RESTAURANT_ACTIVE_STATUSES.includes(o.status)).length;
-  return {
-    todayCount: todayOrders.length,
-    todayRevenue,
-    activeCount,
-    totalCount: orders.length,
-  };
-}
-
 function RestaurantDashboard() {
   const navigate = useNavigate();
   const { restaurantName } = useRestaurantProfile();
@@ -75,6 +56,11 @@ function RestaurantDashboard() {
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState("");
   const [orderActionId, setOrderActionId] = useState(null);
+
+  const refreshOrders = useCallback(async () => {
+    const { orders: list } = await getRestaurantOrders();
+    setOrders(list || []);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,29 +87,45 @@ function RestaurantDashboard() {
     }
 
     const onOrderUpdate = (payload) => {
+      const orderId = String(payload.orderId);
       setOrders((prev) => {
-        const idx = prev.findIndex((o) => String(o._id) === payload.orderId);
-        if (idx >= 0) {
-          return prev.map((o) =>
-            String(o._id) === payload.orderId
-              ? { ...o, status: payload.status, updatedAt: payload.updatedAt }
-              : o
-          );
+        if (!prev.some((o) => String(o._id) === orderId)) {
+          return prev;
         }
-        loadOrders();
+        return mergeOrderPatch(prev, orderId, {
+          status: payload.status,
+          updatedAt: payload.updatedAt,
+        });
+      });
+
+      setOrders((prev) => {
+        if (prev.some((o) => String(o._id) === orderId)) {
+          return prev;
+        }
+        getRestaurantOrders()
+          .then(({ orders: list }) => {
+            if (!cancelled) setOrders(list || []);
+          })
+          .catch(() => {});
         return prev;
       });
     };
 
     socket.on("order:update", onOrderUpdate);
 
+    const onFocus = () => {
+      loadOrders();
+    };
+    window.addEventListener("focus", onFocus);
+
     return () => {
       cancelled = true;
       socket.off("order:update", onOrderUpdate);
+      window.removeEventListener("focus", onFocus);
     };
   }, []);
 
-  const stats = useMemo(() => computeStats(orders), [orders]);
+  const stats = useMemo(() => computeRestaurantDashboardStats(orders), [orders]);
   const recentOrders = useMemo(() => orders.slice(0, 10), [orders]);
 
   const handleOrderStatus = async (orderId, nextStatus) => {
@@ -131,9 +133,8 @@ function RestaurantDashboard() {
     setOrdersError("");
     try {
       const { order } = await updateOrderStatus(orderId, nextStatus);
-      setOrders((prev) =>
-        prev.map((o) => (String(o._id) === String(orderId) ? { ...o, ...order } : o))
-      );
+      setOrders((prev) => mergeOrderRecord(prev, order));
+      await refreshOrders();
     } catch (e) {
       setOrdersError(e.message || "Order update failed");
     } finally {
@@ -171,7 +172,7 @@ function RestaurantDashboard() {
           </div>
           <p className="rd-stat-label">Today&apos;s orders</p>
           <p className="rd-stat-value">
-            {ordersLoading ? "…" : stats.todayCount}
+            {ordersLoading ? "…" : stats.todayOrdersCount}
             <span className="rd-stat-meta">{stats.totalCount} total</span>
           </p>
         </div>
@@ -185,7 +186,9 @@ function RestaurantDashboard() {
           <p className="rd-stat-label">Today&apos;s revenue</p>
           <p className="rd-stat-value">
             {ordersLoading ? "…" : `$${stats.todayRevenue.toFixed(2)}`}
-            <span className="rd-stat-meta">Today</span>
+            <span className="rd-stat-meta">
+              {stats.todayDeliveredCount} delivered today
+            </span>
           </p>
         </div>
 

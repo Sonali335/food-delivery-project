@@ -14,6 +14,10 @@ import {
   statusBadgeClass,
   statusDisplayLabel,
 } from "../utils/restaurantOrderDisplay";
+import {
+  computeRestaurantDashboardStats,
+  mergeOrderRecord,
+} from "../utils/restaurantDashboardStats";
 
 const PAGE_SIZE = 10;
 
@@ -25,17 +29,6 @@ const FILTER_CHIPS = [
   { id: "PICKED_UP", label: "Out for delivery" },
   { id: "DELIVERED", label: "Delivered" },
 ];
-
-function isToday(iso) {
-  if (!iso) return false;
-  const d = new Date(iso);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
-}
 
 function RestaurantOrderHistory() {
   const [orders, setOrders] = useState([]);
@@ -134,9 +127,12 @@ function RestaurantOrderHistory() {
   );
 
   const todayStats = useMemo(() => {
-    const todayOrders = orders.filter((o) => isToday(o.createdAt));
-    const revenue = todayOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
-    return { count: todayOrders.length, revenue };
+    const stats = computeRestaurantDashboardStats(orders);
+    return {
+      count: stats.todayOrdersCount,
+      revenue: stats.todayRevenue,
+      delivered: stats.todayDeliveredCount,
+    };
   }, [orders]);
 
   const handleOrderStatus = async (orderId, nextStatus) => {
@@ -145,9 +141,9 @@ function RestaurantOrderHistory() {
     setOrdersError("");
     try {
       const { order } = await updateOrderStatus(orderId, nextStatus);
-      setOrders((prev) =>
-        prev.map((o) => (String(o._id) === String(orderId) ? { ...o, ...order } : o))
-      );
+      setOrders((prev) => mergeOrderRecord(prev, order));
+      const { orders: list } = await getRestaurantOrders();
+      setOrders(list || []);
       if (nextStatus === "CANCELLED" || nextStatus === "DELIVERED") {
         setDetailOrderId(null);
       }
