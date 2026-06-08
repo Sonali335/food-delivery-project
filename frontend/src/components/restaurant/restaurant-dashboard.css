@@ -2805,13 +2805,11 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem 1rem;
-  border: 2px solid #dee9fc;
+  border: 2px solid transparent;
   border-radius: 0.75rem;
-  background: #f8f9ff;
   font-family: inherit;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #3c4a42;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
 }
@@ -2820,9 +2818,49 @@
   font-size: 1.25rem;
 }
 
-.rd-set-status-chip:hover:not(:disabled) {
-  border-color: #b0d4c8;
-  background: #eff4ff;
+.rd-set-status-chip-open {
+  border-color: #a7f3d0;
+  background: #f0fdf4;
+  color: #065f46;
+}
+
+.rd-set-status-chip-open .material-symbols-outlined {
+  color: #10b981;
+}
+
+.rd-set-status-chip-busy {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.rd-set-status-chip-busy .material-symbols-outlined {
+  color: #f59e0b;
+}
+
+.rd-set-status-chip-closed {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.rd-set-status-chip-closed .material-symbols-outlined {
+  color: #ef4444;
+}
+
+.rd-set-status-chip:hover:not(:disabled).rd-set-status-chip-open {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+.rd-set-status-chip:hover:not(:disabled).rd-set-status-chip-busy {
+  border-color: #f59e0b;
+  background: #fef3c7;
+}
+
+.rd-set-status-chip:hover:not(:disabled).rd-set-status-chip-closed {
+  border-color: #ef4444;
+  background: #fee2e2;
 }
 
 .rd-set-status-chip:disabled {
@@ -2831,24 +2869,36 @@
 }
 
 .rd-set-status-chip-active.rd-set-status-chip-open {
-  border-color: #10b981;
-  background: #ecfdf5;
+  border-color: #059669;
+  background: #d1fae5;
   color: #047857;
-  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
+}
+
+.rd-set-status-chip-active.rd-set-status-chip-open .material-symbols-outlined {
+  color: #059669;
 }
 
 .rd-set-status-chip-active.rd-set-status-chip-busy {
-  border-color: #f59e0b;
-  background: #fffbeb;
-  color: #b45309;
-  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.25);
+  border-color: #d97706;
+  background: #fde68a;
+  color: #92400e;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22);
+}
+
+.rd-set-status-chip-active.rd-set-status-chip-busy .material-symbols-outlined {
+  color: #d97706;
 }
 
 .rd-set-status-chip-active.rd-set-status-chip-closed {
-  border-color: #a3a3a3;
-  background: #fafafa;
-  color: #525252;
-  box-shadow: 0 0 0 1px rgba(163, 163, 163, 0.2);
+  border-color: #dc2626;
+  background: #fecaca;
+  color: #991b1b;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+
+.rd-set-status-chip-active.rd-set-status-chip-closed .material-symbols-outlined {
+  color: #dc2626;
 }
 
 .rd-set-visibility-foot {
@@ -2878,8 +2928,8 @@
 }
 
 .rd-set-live-pill-closed {
-  background: #f5f5f5;
-  color: #525252;
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .rd-set-toggle-row {
