@@ -3,8 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { getRestaurantOrders, updateOrderStatus } from "../api/orders";
 import { connectSocket } from "../socket";
 import { useRestaurantProfile } from "../components/restaurant/RestaurantProfileContext";
-
-const ACTIVE_STATUSES = ["PLACED", "ACCEPTED", "PREPARING"];
+import {
+  canRestaurantCancel,
+  orderStatusBadgeClass,
+  orderStatusLabel,
+  restaurantPrimaryAction,
+  restaurantStatusHint,
+  RESTAURANT_ACTIVE_STATUSES,
+} from "../utils/orderStatus";
 
 const AVATAR_COLORS = [
   { bg: "#d1fae5", text: "#047857" },
@@ -47,19 +53,13 @@ function avatarColor(customerId) {
 }
 
 function statusBadgeClass(status) {
-  const key = (status || "").toLowerCase().replace(/-/g, "_");
-  return `rd-badge rd-badge-${key}`;
-}
-
-function statusLabel(status) {
-  if (!status) return "—";
-  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return orderStatusBadgeClass(status, "rd-badge");
 }
 
 function computeStats(orders) {
   const todayOrders = orders.filter((o) => isToday(o.createdAt));
   const todayRevenue = todayOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
-  const activeCount = orders.filter((o) => ACTIVE_STATUSES.includes(o.status)).length;
+  const activeCount = orders.filter((o) => RESTAURANT_ACTIVE_STATUSES.includes(o.status)).length;
   return {
     todayCount: todayOrders.length,
     todayRevenue,
@@ -130,7 +130,10 @@ function RestaurantDashboard() {
     setOrderActionId(orderId);
     setOrdersError("");
     try {
-      await updateOrderStatus(orderId, nextStatus);
+      const { order } = await updateOrderStatus(orderId, nextStatus);
+      setOrders((prev) =>
+        prev.map((o) => (String(o._id) === String(orderId) ? { ...o, ...order } : o))
+      );
     } catch (e) {
       setOrdersError(e.message || "Order update failed");
     } finally {
@@ -225,6 +228,8 @@ function RestaurantDashboard() {
                 <tbody>
                   {recentOrders.map((order) => {
                     const avatar = avatarColor(order.customerId);
+                    const primaryAction = restaurantPrimaryAction(order);
+                    const statusHint = restaurantStatusHint(order.status);
                     return (
                       <tr key={order._id}>
                         <td className="rd-order-id">#{String(order._id).slice(-6)}</td>
@@ -242,33 +247,25 @@ function RestaurantDashboard() {
                         <td className="rd-items-text">{formatItems(order.items)}</td>
                         <td>
                           <span className={statusBadgeClass(order.status)}>
-                            {statusLabel(order.status)}
+                            {orderStatusLabel(order.status)}
                           </span>
                         </td>
                         <td className="rd-amount">${Number(order.totalAmount).toFixed(2)}</td>
                         <td>
                           <div className="rd-order-actions">
-                            {order.status === "PLACED" ? (
+                            {primaryAction ? (
                               <button
                                 type="button"
-                                className="rd-action-btn"
+                                className="rd-action-btn rd-action-btn-primary"
                                 disabled={orderActionId === order._id}
-                                onClick={() => handleOrderStatus(order._id, "ACCEPTED")}
+                                onClick={() =>
+                                  handleOrderStatus(order._id, primaryAction.nextStatus)
+                                }
                               >
-                                Accept
+                                {primaryAction.label}
                               </button>
                             ) : null}
-                            {order.status === "ACCEPTED" ? (
-                              <button
-                                type="button"
-                                className="rd-action-btn"
-                                disabled={orderActionId === order._id}
-                                onClick={() => handleOrderStatus(order._id, "PREPARING")}
-                              >
-                                Preparing
-                              </button>
-                            ) : null}
-                            {["PLACED", "ACCEPTED", "PREPARING"].includes(order.status) ? (
+                            {canRestaurantCancel(order) ? (
                               <button
                                 type="button"
                                 className="rd-action-btn"
@@ -278,7 +275,12 @@ function RestaurantDashboard() {
                                 Cancel
                               </button>
                             ) : null}
-                            {!["PLACED", "ACCEPTED", "PREPARING"].includes(order.status) ? (
+                            {!primaryAction && !canRestaurantCancel(order) && statusHint ? (
+                              <span className={`rd-order-status-hint${order.status === "DELIVERED" ? " rd-order-status-hint-done" : ""}`}>
+                                {statusHint}
+                              </span>
+                            ) : null}
+                            {!primaryAction && !canRestaurantCancel(order) && !statusHint ? (
                               <span className="rd-items-text">—</span>
                             ) : null}
                           </div>

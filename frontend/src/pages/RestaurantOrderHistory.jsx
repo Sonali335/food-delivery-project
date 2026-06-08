@@ -18,11 +18,12 @@ import {
 const PAGE_SIZE = 10;
 
 const FILTER_CHIPS = [
-  { id: "all", label: "All Orders" },
+  { id: "all", label: "All orders" },
+  { id: "PLACED", label: "New" },
+  { id: "ACCEPTED", label: "Accepted" },
   { id: "PREPARING", label: "Preparing" },
-  { id: "ACCEPTED", label: "Ready for Pickup" },
-  { id: "PICKED_UP", label: "Out for Delivery" },
-  { id: "DELIVERED", label: "Completed" },
+  { id: "PICKED_UP", label: "Out for delivery" },
+  { id: "DELIVERED", label: "Delivered" },
 ];
 
 function isToday(iso) {

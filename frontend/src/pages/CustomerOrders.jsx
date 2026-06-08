@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { getCustomerOrders } from "../api/orders";
 import { getAllRestaurants } from "../api/restaurant";
 import { connectSocket } from "../socket";
+import { orderStatusLabel } from "../utils/orderStatus";
 import CustomerLayout from "../components/customer/CustomerLayout";
 import "../components/customer/customer-dashboard.css";
 
@@ -17,8 +18,7 @@ function statusBadgeClass(status) {
 }
 
 function statusLabel(status) {
-  if (!status) return "—";
-  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return orderStatusLabel(status);
 }
 
 function restaurantNameFor(order, nameById) {

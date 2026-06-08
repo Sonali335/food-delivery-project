@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { updateLocation } from "../api/driver";
 import { getDriverOrders, updateOrderStatus } from "../api/orders";
 import { connectSocket } from "../socket";
+import { orderStatusLabel } from "../utils/orderStatus";
 import DriverLayout from "../components/driver/DriverLayout";
 import { useDriverProfile } from "../components/driver/DriverProfileContext";
 
@@ -43,8 +44,7 @@ function statusBadgeClass(status) {
 }
 
 function statusLabel(status) {
-  if (!status) return "—";
-  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return orderStatusLabel(status);
 }
 
 function computeStats(orders, ratingAverage) {

@@ -5,10 +5,11 @@ import { getAllRestaurants } from "../api/restaurant";
 import { getProfile } from "../api/profile";
 import { connectSocket } from "../socket";
 import { resolveMediaUrl } from "../utils/mediaUrl";
+import { CUSTOMER_ACTIVE_STATUSES, orderStatusLabel } from "../utils/orderStatus";
 import CustomerLayout from "../components/customer/CustomerLayout";
 import "../components/customer/customer-dashboard.css";
 
-const ACTIVE_STATUSES = ["PLACED", "ACCEPTED", "PREPARING", "PICKED_UP"];
+const ACTIVE_STATUSES = CUSTOMER_ACTIVE_STATUSES;
 
 function isToday(iso) {
   if (!iso) return false;
@@ -27,8 +28,7 @@ function statusBadgeClass(status) {
 }
 
 function statusLabel(status) {
-  if (!status) return "—";
-  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return orderStatusLabel(status);
 }
 
 function computeStats(orders) {

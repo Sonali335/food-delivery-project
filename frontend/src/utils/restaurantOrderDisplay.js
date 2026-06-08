@@ -1,3 +1,17 @@
+import {
+  canRestaurantCancel,
+  isActiveOrderStatus,
+  orderStatusLabel,
+  restaurantPrimaryAction,
+} from "./orderStatus";
+
+export {
+  canRestaurantCancel,
+  isActiveOrderStatus,
+  orderStatusLabel,
+  restaurantPrimaryAction,
+};
+
 const AVATAR_COLORS = [
   { bg: "#adedd3", text: "#306d58" },
   { bg: "#dbeafe", text: "#1d4ed8" },
@@ -37,15 +51,7 @@ export function formatOrderTime(iso) {
 }
 
 export function statusDisplayLabel(status) {
-  const map = {
-    PLACED: "Placed",
-    ACCEPTED: "Ready",
-    PREPARING: "Preparing",
-    PICKED_UP: "Out for delivery",
-    DELIVERED: "Delivered",
-    CANCELLED: "Cancelled",
-  };
-  return map[status] || status;
+  return orderStatusLabel(status);
 }
 
 export function statusBadgeClass(status) {
@@ -53,23 +59,14 @@ export function statusBadgeClass(status) {
   return `rd-oh-badge rd-oh-badge-${key}`;
 }
 
-export function isActiveOrderStatus(status) {
-  return ["PLACED", "ACCEPTED", "PREPARING"].includes(status);
-}
-
 export function primaryOrderAction(order) {
-  if (!order) return null;
-  if (order.status === "PLACED") {
-    return { label: "Accept Order", status: "ACCEPTED" };
-  }
-  if (order.status === "ACCEPTED") {
-    return { label: "Start Cooking", status: "PREPARING" };
-  }
-  return null;
+  const action = restaurantPrimaryAction(order);
+  if (!action) return null;
+  return { label: action.label, status: action.nextStatus };
 }
 
 export function canRejectOrder(order) {
-  return order && ["PLACED", "ACCEPTED", "PREPARING"].includes(order.status);
+  return canRestaurantCancel(order);
 }
 
 export function matchesOrderSearch(order, query) {

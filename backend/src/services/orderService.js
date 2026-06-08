@@ -22,11 +22,11 @@ const TRANSITIONS = {
     CANCELLED: ["customer", "restaurant"],
   },
   PREPARING: {
-    PICKED_UP: ["driver"],
+    PICKED_UP: ["driver", "restaurant"],
     CANCELLED: ["restaurant"],
   },
   PICKED_UP: {
-    DELIVERED: ["driver"],
+    DELIVERED: ["driver", "restaurant"],
   },
   DELIVERED: {},
   CANCELLED: {},

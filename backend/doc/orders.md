@@ -95,9 +95,9 @@ Returns `{ "order": { ... } }` if the caller is the customer, restaurant, or an 
 | `PLACED` | `CANCELLED` | customer, restaurant |
 | `ACCEPTED` | `PREPARING` | restaurant |
 | `ACCEPTED` | `CANCELLED` | customer, restaurant |
-| `PREPARING` | `PICKED_UP` | driver (sets `driverId` to logged-in driver) |
+| `PREPARING` | `PICKED_UP` | driver (sets `driverId`) or restaurant |
 | `PREPARING` | `CANCELLED` | restaurant |
-| `PICKED_UP` | `DELIVERED` | driver (must be assigned driver) |
+| `PICKED_UP` | `DELIVERED` | driver (must be assigned driver) or restaurant |
 
 Invalid transitions return **400** with a clear `message`. Wrong role returns **403**.
 

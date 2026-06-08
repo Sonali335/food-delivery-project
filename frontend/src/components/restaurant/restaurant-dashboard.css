@@ -674,6 +674,28 @@
   flex-wrap: wrap;
   gap: 0.35rem;
   margin-top: 0.35rem;
+  align-items: center;
+}
+
+.rd-action-btn-primary {
+  border-color: #006c49;
+  color: #006c49;
+  background: #ecfdf5;
+}
+
+.rd-action-btn-primary:hover:not(:disabled) {
+  background: #d1fae5;
+}
+
+.rd-order-status-hint {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6c7a71;
+  white-space: nowrap;
+}
+
+.rd-order-status-hint-done {
+  color: #047857;
 }
 
 .rd-action-btn {
