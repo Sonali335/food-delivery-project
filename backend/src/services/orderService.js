@@ -91,11 +91,15 @@ const buildOrderItems = async (restaurantId, itemsPayload) => {
 
     const lineTotal = menuItem.price * quantity;
     totalAmount += lineTotal;
+    const prepTime = [10, 15, 20, 25, 30, 35, 40].includes(menuItem.prepTime)
+      ? menuItem.prepTime
+      : 20;
     lineItems.push({
       menuItemId: menuItem._id,
       name: menuItem.name,
       quantity,
       price: menuItem.price,
+      prepTime,
     });
   }
 
@@ -229,6 +233,48 @@ const updateOrderStatus = async (actor, orderId, newStatus) => {
   return updated;
 };
 
+const updateOrderFields = async (actor, orderId, fields) => {
+  assertValidObjectId(orderId, "order id");
+
+  const order = await Order.findById(orderId);
+  if (!order) {
+    throw createError("Order not found", 404);
+  }
+
+  if (actor.role !== "restaurant" || String(order.restaurantId) !== String(actor._id)) {
+    throw createError("Forbidden", 403);
+  }
+
+  if (fields.eta !== undefined) {
+    if (fields.eta === null) {
+      order.eta = null;
+    } else {
+      const parsed = new Date(fields.eta);
+      if (Number.isNaN(parsed.getTime())) {
+        throw createError("eta must be a valid ISO date", 400);
+      }
+      order.eta = parsed;
+    }
+  }
+
+  if (fields.prepTimeMinutes !== undefined) {
+    if (fields.prepTimeMinutes === null) {
+      order.prepTimeMinutes = null;
+    } else {
+      const minutes = Number(fields.prepTimeMinutes);
+      if (![10, 15, 20, 25, 30, 35, 40].includes(minutes)) {
+        throw createError("prepTimeMinutes must be 10, 15, 20, 25, 30, 35, or 40", 400);
+      }
+      order.prepTimeMinutes = minutes;
+    }
+  }
+
+  await order.save();
+  const updated = order.toObject();
+  emitOrderUpdate(updated);
+  return updated;
+};
+
 module.exports = {
   createOrder,
   getOrderById,
@@ -236,6 +282,7 @@ module.exports = {
   getOrdersForRestaurant,
   getOrdersForDriver,
   updateOrderStatus,
+  updateOrderFields,
   ORDER_STATUSES,
   TRANSITIONS,
 };

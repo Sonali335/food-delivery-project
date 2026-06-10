@@ -22,6 +22,7 @@ const restaurantProfileSchema = new mongoose.Schema(
       enum: ["open", "closed", "busy"],
       default: "open",
     },
+    prepTime: { type: Number, default: 20, min: 10, max: 40 },
   },
   { timestamps: true }
 );

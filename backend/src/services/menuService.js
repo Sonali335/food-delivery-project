@@ -3,10 +3,17 @@ const MenuItem = require("../models/MenuItem");
 const Category = require("../models/Category");
 const RestaurantProfile = require("../models/RestaurantProfile");
 
+const ALLOWED_PREP_TIMES = [10, 15, 20, 25, 30, 35, 40];
+
 const createError = (message, statusCode) => {
   const error = new Error(message);
   error.statusCode = statusCode;
   return error;
+};
+
+const normalizePrepTime = (value) => {
+  const minutes = Number(value);
+  return ALLOWED_PREP_TIMES.includes(minutes) ? minutes : 20;
 };
 
 const assertValidCategoryForRestaurant = async (restaurantId, categoryId) => {
@@ -21,7 +28,7 @@ const assertValidCategoryForRestaurant = async (restaurantId, categoryId) => {
 };
 
 const createMenuItem = async (restaurantId, payload) => {
-  const { name, description, price, categoryId, imageUrl, isAvailable } = payload;
+  const { name, description, price, categoryId, imageUrl, isAvailable, prepTime } = payload;
 
   if (!name || !String(name).trim()) {
     throw createError("name is required", 400);
@@ -47,6 +54,7 @@ const createMenuItem = async (restaurantId, payload) => {
     categoryId,
     imageUrl: imageUrl != null && String(imageUrl).trim() !== "" ? String(imageUrl).trim() : null,
     isAvailable: typeof isAvailable === "boolean" ? isAvailable : true,
+    prepTime: normalizePrepTime(prepTime),
   });
 
   return MenuItem.findById(created._id)
@@ -119,6 +127,9 @@ const updateMenuItem = async (restaurantId, itemId, payload) => {
     }
     updates.isAvailable = payload.isAvailable;
   }
+  if (payload.prepTime !== undefined) {
+    updates.prepTime = normalizePrepTime(payload.prepTime);
+  }
 
   const item = await MenuItem.findOneAndUpdate({ _id: itemId, restaurantId }, updates, {
     new: true,
@@ -158,6 +169,7 @@ const getMenuByRestaurant = async (restaurantId) => {
     price: item.price,
     image: item.imageUrl || null,
     category: item.categoryId?.name || null,
+    prepTime: normalizePrepTime(item.prepTime),
   }));
 };
 
@@ -199,6 +211,7 @@ const searchMenuItemsForCustomer = async (query) => {
         price: item.price,
         image: item.imageUrl || null,
         category: item.categoryId?.name || null,
+        prepTime: normalizePrepTime(item.prepTime),
         restaurant: {
           id: profile.userId,
           name: profile.restaurantName,

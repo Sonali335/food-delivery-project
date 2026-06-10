@@ -6,6 +6,7 @@ import { createOrder } from "../api/orders";
 import CustomerLayout from "../components/customer/CustomerLayout";
 import { loadStoredCart, saveStoredCart } from "../utils/customerCart";
 import { resolveMediaUrl } from "../utils/mediaUrl";
+import { formatPrepTimeLabel, maxPrepTimeFromItems } from "../utils/prepTime";
 import "../components/customer/customer-dashboard.css";
 
 const DELIVERY_FEE = 2.99;
@@ -52,6 +53,9 @@ function MenuItemCard({ item, onAdd }) {
           <span className="cd-menu-card-price">${Number(item.price).toFixed(2)}</span>
         </div>
         {item.description ? <p className="cd-menu-card-desc">{item.description}</p> : null}
+        {item.prepTime != null ? (
+          <p className="cd-menu-prep-time">Prep: {formatPrepTimeLabel(item.prepTime)}</p>
+        ) : null}
         <button type="button" className="cd-menu-card-add" onClick={() => onAdd(item)}>
           <span className="material-symbols-outlined" style={{ fontSize: "1.125rem" }}>
             add
@@ -78,6 +82,11 @@ function MenuItemRow({ item, onAdd }) {
           {item.description ? (
             <p className="cd-menu-card-desc" style={{ marginBottom: 0 }}>
               {item.description}
+            </p>
+          ) : null}
+          {item.prepTime != null ? (
+            <p className="cd-menu-prep-time" style={{ marginTop: "0.25rem" }}>
+              Prep: {formatPrepTimeLabel(item.prepTime)}
             </p>
           ) : null}
         </div>
@@ -143,6 +152,7 @@ function CustomerRestaurantMenu() {
   const cartCount = cart.reduce((sum, line) => sum + line.quantity, 0);
   const subtotal = cart.reduce((sum, line) => sum + Number(line.price) * line.quantity, 0);
   const total = cart.length > 0 ? subtotal + DELIVERY_FEE : 0;
+  const cartPrepMinutes = useMemo(() => maxPrepTimeFromItems(cart), [cart]);
 
   const addToCart = (item) => {
     setCart((prev) => {
@@ -161,6 +171,7 @@ function CustomerRestaurantMenu() {
           name: item.name,
           price: item.price,
           quantity: 1,
+          prepTime: item.prepTime,
         },
       ];
     });
@@ -377,6 +388,12 @@ function CustomerRestaurantMenu() {
                         </div>
                       </div>
                     ))}
+
+                    {cartPrepMinutes ? (
+                      <p className="cd-menu-cart-prep">
+                        Est. prep time: up to {formatPrepTimeLabel(cartPrepMinutes)}
+                      </p>
+                    ) : null}
 
                     <div className="cd-menu-cart-totals">
                       <div className="cd-menu-cart-total-row">

@@ -1,5 +1,6 @@
 import { useId, useRef } from "react";
 import { Link } from "react-router-dom";
+import { PREP_TIME_OPTIONS } from "../../utils/prepTime";
 
 function MenuItemForm({
   title,
@@ -9,10 +10,12 @@ function MenuItemForm({
   description,
   price,
   categoryId,
+  prepTime,
   onNameChange,
   onDescriptionChange,
   onPriceChange,
   onCategoryChange,
+  onPrepTimeChange,
   previewSrc,
   pickedFileName,
   onFileChange,
@@ -105,6 +108,21 @@ function MenuItemForm({
                     {categories.map((c) => (
                       <option key={c._id} value={c._id}>
                         {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="rd-form-field">
+                  <label htmlFor="menuPrepTime">Prep time</label>
+                  <select
+                    id="menuPrepTime"
+                    value={prepTime}
+                    onChange={(e) => onPrepTimeChange(Number(e.target.value))}
+                    required
+                  >
+                    {PREP_TIME_OPTIONS.map((minutes) => (
+                      <option key={minutes} value={minutes}>
+                        {minutes} min
                       </option>
                     ))}
                   </select>

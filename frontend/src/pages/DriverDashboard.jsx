@@ -3,6 +3,7 @@ import { updateLocation } from "../api/driver";
 import { getDriverOrders, updateOrderStatus } from "../api/orders";
 import { connectSocket } from "../socket";
 import { orderStatusLabel } from "../utils/orderStatus";
+import OrderEtaText from "../components/OrderEtaText";
 import DriverLayout from "../components/driver/DriverLayout";
 import { useDriverProfile } from "../components/driver/DriverProfileContext";
 
@@ -111,7 +112,7 @@ function DriverDashboardContent() {
         if (idx >= 0) {
           return prev.map((o) =>
             String(o._id) === payload.orderId
-              ? { ...o, status: payload.status, updatedAt: payload.updatedAt }
+              ? { ...o, status: payload.status, updatedAt: payload.updatedAt, eta: payload.eta ?? o.eta }
               : o
           );
         }
@@ -242,6 +243,7 @@ function DriverDashboardContent() {
                     <p className="dd-active-card-meta">
                       {orderShortId(activeOrder._id)} • {statusLabel(activeOrder.status)}
                     </p>
+                    <OrderEtaText eta={activeOrder.eta} />
                   </div>
                   <div>
                     <p className="dd-active-earning">${Number(activeOrder.totalAmount).toFixed(2)}</p>
@@ -348,6 +350,7 @@ function DriverDashboardContent() {
                       <p className="dd-delivery-meta">
                         {orderShortId(order._id)} • {statusLabel(order.status)}
                       </p>
+                      <OrderEtaText eta={order.eta} />
                       <div className="dd-delivery-actions">
                         {order.status === "PREPARING" ? (
                           <button

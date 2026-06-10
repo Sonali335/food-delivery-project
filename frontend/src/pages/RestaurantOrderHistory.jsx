@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getRestaurantOrders, updateOrderStatus } from "../api/orders";
+import { acceptRestaurantOrder } from "../utils/acceptRestaurantOrder";
 import { connectSocket } from "../socket";
 import RestaurantOrderDetailModal from "../components/restaurant/RestaurantOrderDetailModal";
 import {
@@ -76,7 +77,13 @@ function RestaurantOrderHistory() {
         if (idx >= 0) {
           return prev.map((o) =>
             String(o._id) === payload.orderId
-              ? { ...o, status: payload.status, updatedAt: payload.updatedAt }
+              ? {
+                  ...o,
+                  status: payload.status,
+                  updatedAt: payload.updatedAt,
+                  eta: payload.eta ?? o.eta,
+                  prepTimeMinutes: payload.prepTimeMinutes ?? o.prepTimeMinutes,
+                }
               : o
           );
         }
@@ -140,7 +147,12 @@ function RestaurantOrderHistory() {
     setModalError("");
     setOrdersError("");
     try {
-      const { order } = await updateOrderStatus(orderId, nextStatus);
+      const order = orders.find((o) => String(o._id) === String(orderId));
+      const result =
+        nextStatus === "ACCEPTED"
+          ? await acceptRestaurantOrder(orderId, order?.items)
+          : await updateOrderStatus(orderId, nextStatus);
+      const { order } = result;
       setOrders((prev) => mergeOrderRecord(prev, order));
       const { orders: list } = await getRestaurantOrders();
       setOrders(list || []);

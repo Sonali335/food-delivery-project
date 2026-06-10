@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getRestaurantOrders, updateOrderStatus } from "../api/orders";
+import { acceptRestaurantOrder } from "../utils/acceptRestaurantOrder";
+import OrderEtaText from "../components/OrderEtaText";
 import { connectSocket } from "../socket";
 import { useRestaurantProfile } from "../components/restaurant/RestaurantProfileContext";
 import {
@@ -96,6 +98,8 @@ function RestaurantDashboard() {
         return mergeOrderPatch(prev, orderId, {
           status: payload.status,
           updatedAt: payload.updatedAt,
+          eta: payload.eta ?? undefined,
+          prepTimeMinutes: payload.prepTimeMinutes ?? undefined,
         });
       });
 
@@ -140,7 +144,12 @@ function RestaurantDashboard() {
     setOrderActionId(orderId);
     setOrdersError("");
     try {
-      const { order } = await updateOrderStatus(orderId, nextStatus);
+      const order = orders.find((o) => String(o._id) === String(orderId));
+      const result =
+        nextStatus === "ACCEPTED"
+          ? await acceptRestaurantOrder(orderId, order?.items)
+          : await updateOrderStatus(orderId, nextStatus);
+      const { order } = result;
       setOrders((prev) => mergeOrderRecord(prev, order));
       await refreshOrders();
     } catch (e) {
@@ -277,6 +286,7 @@ function RestaurantDashboard() {
                           <span className={statusBadgeClass(order.status)}>
                             {orderStatusLabel(order.status)}
                           </span>
+                          <OrderEtaText eta={order.eta} />
                         </td>
                         <td className="rd-amount">${Number(order.totalAmount).toFixed(2)}</td>
                         <td>

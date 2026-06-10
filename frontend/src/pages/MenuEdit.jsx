@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getCategories } from "../api/category";
 import { getMenuItem, updateMenuItem, uploadMenuImage } from "../api/menu";
 import MenuItemForm from "../components/restaurant/MenuItemForm";
+import { DEFAULT_PREP_TIME, normalizePrepTime } from "../utils/prepTime";
 
 function resolveCategoryIdField(raw) {
   if (raw && typeof raw === "object" && raw._id != null) return String(raw._id);
@@ -18,6 +19,7 @@ function MenuEdit() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [prepTime, setPrepTime] = useState(DEFAULT_PREP_TIME);
   const [imageUrl, setImageUrl] = useState("");
   const [pickedFile, setPickedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -39,6 +41,7 @@ function MenuEdit() {
         setPrice(String(item.price ?? ""));
         setCategoryId(resolveCategoryIdField(item.categoryId));
         setImageUrl(item.imageUrl || "");
+        setPrepTime(normalizePrepTime(item.prepTime));
       } catch (e) {
         if (!cancelled) setError(e.message || "Failed to load item");
       } finally {
@@ -90,6 +93,7 @@ function MenuEdit() {
         price: Number(price),
         categoryId,
         imageUrl: nextImageUrl,
+        prepTime,
       });
       navigate("/restaurant/menu");
     } catch (err) {
@@ -114,10 +118,12 @@ function MenuEdit() {
       description={description}
       price={price}
       categoryId={categoryId}
+      prepTime={prepTime}
       onNameChange={setName}
       onDescriptionChange={setDescription}
       onPriceChange={setPrice}
       onCategoryChange={setCategoryId}
+      onPrepTimeChange={setPrepTime}
       previewSrc={displayPreview}
       pickedFileName={pickedFile?.name}
       onFileChange={handleFileChange}

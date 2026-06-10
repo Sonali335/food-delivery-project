@@ -1166,6 +1166,20 @@
   flex: 1;
 }
 
+.cd-menu-prep-time {
+  font-size: 0.8125rem;
+  color: #5a6b62;
+  margin: 0 0 0.75rem;
+}
+
+.cd-menu-cart-prep {
+  font-size: 0.875rem;
+  color: #3c4a42;
+  margin: 0.75rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f0f0f0;
+}
+
 .cd-menu-card-add {
   width: 100%;
   padding: 0.5rem;

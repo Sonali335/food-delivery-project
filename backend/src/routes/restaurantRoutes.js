@@ -20,6 +20,20 @@ router.patch(
 );
 
 router.get(
+  "/settings",
+  authMiddleware,
+  roleMiddleware(["restaurant"]),
+  restaurantController.getRestaurantSettings
+);
+
+router.patch(
+  "/settings",
+  authMiddleware,
+  roleMiddleware(["restaurant"]),
+  restaurantController.updateRestaurantSettings
+);
+
+router.get(
   "/geocode",
   authMiddleware,
   roleMiddleware(["restaurant"]),

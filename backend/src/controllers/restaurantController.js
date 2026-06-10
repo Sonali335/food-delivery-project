@@ -58,11 +58,31 @@ const reverseGeocodeRestaurantLocation = async (req, res) => {
   }
 };
 
+const getRestaurantSettings = async (req, res) => {
+  try {
+    const settings = await restaurantService.getRestaurantSettings(req.user._id);
+    return res.status(200).json({ settings });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
+const updateRestaurantSettings = async (req, res) => {
+  try {
+    const settings = await restaurantService.updateRestaurantSettings(req.user._id, req.body);
+    return res.status(200).json({ settings });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
 const getStatus = getRestaurantStatus;
 
 module.exports = {
   getRestaurantStatus,
   getStatus,
+  updateRestaurantSettings,
+  getRestaurantSettings,
   updateRestaurantStatus,
   geocodeRestaurantLocation,
   reverseGeocodeRestaurantLocation,

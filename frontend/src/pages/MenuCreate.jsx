@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getCategories } from "../api/category";
 import { createMenuItem, uploadMenuImage } from "../api/menu";
 import MenuItemForm from "../components/restaurant/MenuItemForm";
+import { DEFAULT_PREP_TIME } from "../utils/prepTime";
 
 function MenuCreate() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ function MenuCreate() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [prepTime, setPrepTime] = useState(DEFAULT_PREP_TIME);
   const [pickedFile, setPickedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [error, setError] = useState("");
@@ -76,6 +78,7 @@ function MenuCreate() {
         price: Number(price),
         categoryId,
         imageUrl,
+        prepTime,
       });
       navigate("/restaurant/menu");
     } catch (err) {
@@ -94,10 +97,12 @@ function MenuCreate() {
       description={description}
       price={price}
       categoryId={categoryId}
+      prepTime={prepTime}
       onNameChange={setName}
       onDescriptionChange={setDescription}
       onPriceChange={setPrice}
       onCategoryChange={setCategoryId}
+      onPrepTimeChange={setPrepTime}
       previewSrc={previewUrl}
       pickedFileName={pickedFile?.name}
       onFileChange={handleFileChange}

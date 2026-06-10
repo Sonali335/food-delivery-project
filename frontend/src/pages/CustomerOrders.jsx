@@ -4,6 +4,7 @@ import { getCustomerOrders } from "../api/orders";
 import { getAllRestaurants } from "../api/restaurant";
 import { connectSocket } from "../socket";
 import { orderStatusLabel } from "../utils/orderStatus";
+import { formatPrepTimeLabel, maxPrepTimeFromItems } from "../utils/prepTime";
 import CustomerLayout from "../components/customer/CustomerLayout";
 import "../components/customer/customer-dashboard.css";
 
@@ -24,6 +25,14 @@ function statusLabel(status) {
 function restaurantNameFor(order, nameById) {
   const id = order.restaurantId != null ? String(order.restaurantId) : "";
   return nameById[id] || "Restaurant";
+}
+
+function orderPrepLabel(order) {
+  if (order.prepTimeMinutes != null) {
+    return formatPrepTimeLabel(order.prepTimeMinutes);
+  }
+  const max = maxPrepTimeFromItems(order.items);
+  return max ? formatPrepTimeLabel(max) : null;
 }
 
 function CustomerOrders() {
@@ -65,7 +74,13 @@ function CustomerOrders() {
       setOrders((prev) =>
         prev.map((o) =>
           String(o._id) === payload.orderId
-            ? { ...o, status: payload.status, updatedAt: payload.updatedAt }
+            ? {
+                ...o,
+                status: payload.status,
+                updatedAt: payload.updatedAt,
+                eta: payload.eta ?? o.eta,
+                prepTimeMinutes: payload.prepTimeMinutes ?? o.prepTimeMinutes,
+              }
             : o
         )
       );
@@ -111,7 +126,9 @@ function CustomerOrders() {
                     <p className="cd-order-name">Order #{String(order._id).slice(-6)}</p>
                     <p className="cd-order-meta">
                       {restaurantNameFor(order, nameById)} · $
-                      {Number(order.totalAmount).toFixed(2)} · Placed {formatDate(order.createdAt)}
+                      {Number(order.totalAmount).toFixed(2)}
+                      {orderPrepLabel(order) ? ` · Prep ${orderPrepLabel(order)}` : ""} · Placed{" "}
+                      {formatDate(order.createdAt)}
                     </p>
                   </div>
                   <span className={statusBadgeClass(order.status)}>

@@ -35,4 +35,10 @@ router.get("/:id", orderController.getOrderById);
 
 router.patch("/:id/status", orderController.updateOrderStatus);
 
+router.patch(
+  "/:id",
+  roleMiddleware(["restaurant"]),
+  orderController.updateOrder
+);
+
 module.exports = router;

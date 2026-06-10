@@ -62,6 +62,8 @@ const emitOrderUpdate = (order) => {
     orderId: String(order._id),
     status: order.status,
     updatedAt: order.updatedAt,
+    eta: order.eta || null,
+    prepTimeMinutes: order.prepTimeMinutes ?? null,
   };
 
   io.to(`customer:${order.customerId}`).emit("order:update", payload);

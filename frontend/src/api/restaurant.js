@@ -80,6 +80,36 @@ export const reverseGeocodeRestaurantLocation = async (lat, lng) => {
   return result;
 };
 
+export const getRestaurantSettings = async () => {
+  const response = await fetch(`${getApiBase()}/api/restaurant/settings`, {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+    },
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.message || "Could not load restaurant settings");
+  }
+  return result;
+};
+
+export const patchRestaurantSettings = async (settings) => {
+  const response = await fetch(`${getApiBase()}/api/restaurant/settings`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeader(),
+    },
+    body: JSON.stringify(settings),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.message || "Could not save restaurant settings");
+  }
+  return result;
+};
+
 export const updateStatus = async (status) => {
   const response = await fetch(`${getApiBase()}/api/restaurant/status`, {
     method: "PATCH",

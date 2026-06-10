@@ -49,6 +49,40 @@ const getAllRestaurants = async () => {
   return profiles.map(formatRestaurantForCustomer);
 };
 
+const ALLOWED_PREP_TIMES = [10, 15, 20, 25, 30, 35, 40];
+
+const getRestaurantSettings = async (userId) => {
+  const profile = await RestaurantProfile.findOne({ userId }).lean();
+  if (!profile) {
+    throw createError("Restaurant profile not found", 404);
+  }
+  const prepTime = ALLOWED_PREP_TIMES.includes(profile.prepTime) ? profile.prepTime : 20;
+  return { prepTime };
+};
+
+const updateRestaurantSettings = async (userId, payload) => {
+  const { prepTime } = payload;
+  if (prepTime === undefined) {
+    throw createError("prepTime is required", 400);
+  }
+  const value = Number(prepTime);
+  if (!ALLOWED_PREP_TIMES.includes(value)) {
+    throw createError("prepTime must be one of: 10, 15, 20, 25, 30, 35, 40", 400);
+  }
+
+  const profile = await RestaurantProfile.findOneAndUpdate(
+    { userId },
+    { prepTime: value },
+    { new: true, runValidators: true }
+  ).lean();
+
+  if (!profile) {
+    throw createError("Restaurant profile not found", 404);
+  }
+
+  return { prepTime: profile.prepTime };
+};
+
 const getRestaurantById = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw createError("Invalid restaurant id", 400);
@@ -65,6 +99,8 @@ const getRestaurantById = async (id) => {
 module.exports = {
   getRestaurantStatus,
   updateRestaurantStatus,
+  getRestaurantSettings,
+  updateRestaurantSettings,
   getAllRestaurants,
   getRestaurantById,
 };

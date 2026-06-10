@@ -6,6 +6,7 @@ import {
   getProfile,
   tryPasswordUpdateIfFilled,
 } from "../api/profile";
+import { patchRestaurantSettings } from "../api/restaurant";
 import PasswordUpdateFields from "../components/PasswordUpdateFields";
 import RestaurantLocationPicker from "../components/restaurant/RestaurantLocationPicker";
 import { useRestaurantProfile } from "../components/restaurant/RestaurantProfileContext";
@@ -20,6 +21,8 @@ import {
   isOpenByHours,
   parseOpeningHours,
 } from "../utils/restaurantHours";
+
+const PREP_TIME_OPTIONS = [10, 15, 20, 25, 30, 35, 40];
 
 const STATUS_OPTIONS = [
   { value: "open", label: "Open", icon: "check_circle" },
@@ -57,6 +60,7 @@ function RestaurantSettings() {
   const [locationLat, setLocationLat] = useState(null);
   const [locationLng, setLocationLng] = useState(null);
   const [phone, setPhone] = useState("");
+  const [prepTime, setPrepTime] = useState(20);
   const [hours, setHours] = useState(() => parseOpeningHours(null));
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -99,6 +103,8 @@ function RestaurantSettings() {
         setLocationLat(Number.isFinite(lat) ? lat : null);
         setLocationLng(Number.isFinite(lng) ? lng : null);
         setHours(parseOpeningHours(profile.openingHours));
+        const loadedPrep = Number(profile.prepTime);
+        setPrepTime(PREP_TIME_OPTIONS.includes(loadedPrep) ? loadedPrep : 20);
       } catch (e) {
         if (!cancelled) setError(e.message || "Failed to load settings");
       } finally {
@@ -169,6 +175,8 @@ function RestaurantSettings() {
       }
 
       const trimmedName = restaurantName.trim();
+      await patchRestaurantSettings({ prepTime: Number(prepTime) });
+
       await completeRestaurantProfile({
         restaurantName: trimmedName,
         phone: phone.trim(),
@@ -275,6 +283,20 @@ function RestaurantSettings() {
                 onChange={(e) => setPhone(e.target.value)}
                 required
               />
+            </div>
+            <div className="rd-set-field">
+              <label htmlFor="prepTime">Average Preparation Time</label>
+              <select
+                id="prepTime"
+                value={prepTime}
+                onChange={(e) => setPrepTime(Number(e.target.value))}
+              >
+                {PREP_TIME_OPTIONS.map((minutes) => (
+                  <option key={minutes} value={minutes}>
+                    {minutes} minutes
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </section>

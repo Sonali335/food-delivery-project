@@ -169,6 +169,7 @@ function MenuList() {
                     <th>Item</th>
                     <th>Category</th>
                     <th>Price</th>
+                    <th>Prep time</th>
                     <th>Status</th>
                     <th aria-label="Actions" />
                   </tr>
@@ -176,7 +177,7 @@ function MenuList() {
                 <tbody>
                   {filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="rd-oh-table-empty">
+                      <td colSpan={6} className="rd-oh-table-empty">
                         No items match your search or category filter.
                       </td>
                     </tr>
@@ -207,6 +208,9 @@ function MenuList() {
                         <td className="rd-menu-table-category">{categoryName(item)}</td>
                         <td className="rd-menu-table-price">
                           ${Number(item.price).toFixed(2)}
+                        </td>
+                        <td className="rd-menu-table-prep">
+                          {item.prepTime != null ? `${item.prepTime} min` : "20 min"}
                         </td>
                         <td>
                           <span

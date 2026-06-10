@@ -4,6 +4,9 @@ import { getOrder } from "../api/orders";
 import { getRestaurant } from "../api/restaurant";
 import { connectSocket } from "../socket";
 import { orderStatusLabel } from "../utils/orderStatus";
+import OrderEtaText from "../components/OrderEtaText";
+import OrderPrepTimeText from "../components/OrderPrepTimeText";
+import { formatPrepTimeLabel } from "../utils/prepTime";
 import CustomerLayout from "../components/customer/CustomerLayout";
 import "../components/customer/customer-dashboard.css";
 
@@ -67,6 +70,8 @@ function CustomerOrderDetails() {
               ...prev,
               status: payload.status,
               updatedAt: payload.updatedAt,
+              eta: payload.eta ?? prev.eta,
+              prepTimeMinutes: payload.prepTimeMinutes ?? prev.prepTimeMinutes,
             }
           : prev
       );
@@ -92,6 +97,12 @@ function CustomerOrderDetails() {
               </span>
               Placed {formatDate(order.createdAt)}
             </p>
+          ) : null}
+          {order ? (
+            <>
+              <OrderPrepTimeText order={order} className="cd-order-meta" />
+              <OrderEtaText eta={order.eta} className="cd-order-meta" />
+            </>
           ) : null}
         </div>
         <Link to="/customer/orders" className="cd-btn-outline">
@@ -130,6 +141,7 @@ function CustomerOrderDetails() {
                     </p>
                     <p className="cd-order-meta">
                       ${(Number(line.price) * line.quantity).toFixed(2)}
+                      {line.prepTime != null ? ` · Prep ${formatPrepTimeLabel(line.prepTime)}` : ""}
                     </p>
                   </div>
                 </li>

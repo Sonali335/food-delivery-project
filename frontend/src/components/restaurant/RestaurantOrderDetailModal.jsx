@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import OrderEtaText from "../OrderEtaText";
+import OrderPrepTimeText from "../OrderPrepTimeText";
 import {
   avatarColor,
   canRejectOrder,
@@ -73,6 +75,8 @@ function RestaurantOrderDetailModal({
                   {statusDisplayLabel(order.status)}
                 </span>
               </div>
+              <OrderPrepTimeText order={order} />
+              <OrderEtaText eta={order.eta} />
             </div>
           </div>
           <div className="rd-odm-header-actions">

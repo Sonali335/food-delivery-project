@@ -19,6 +19,7 @@ const orderItemSchema = new mongoose.Schema(
     name: { type: String, required: true },
     quantity: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true, min: 0 },
+    prepTime: { type: Number, default: 20, min: 10, max: 40 },
   },
   { _id: false }
 );
@@ -54,6 +55,8 @@ const orderSchema = new mongoose.Schema(
       enum: ORDER_STATUSES,
       default: "PLACED",
     },
+    eta: { type: Date, default: null },
+    prepTimeMinutes: { type: Number, default: null, min: 10, max: 40 },
   },
   { timestamps: true }
 );

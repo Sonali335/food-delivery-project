@@ -55,6 +55,15 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+const updateOrder = async (req, res) => {
+  try {
+    const order = await orderService.updateOrderFields(req.user, req.params.id, req.body);
+    return res.status(200).json({ order });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createOrder,
   getOrderById,
@@ -62,4 +71,5 @@ module.exports = {
   getRestaurantOrders,
   getDriverOrders,
   updateOrderStatus,
+  updateOrder,
 };

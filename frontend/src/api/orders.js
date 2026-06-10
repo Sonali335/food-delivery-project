@@ -81,3 +81,15 @@ export const updateOrderStatus = async (id, status) => {
   });
   return parseResponse(response);
 };
+
+export const updateOrder = async (id, payload) => {
+  const response = await fetch(`${getApiBase()}/api/orders/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+  return parseResponse(response);
+};
