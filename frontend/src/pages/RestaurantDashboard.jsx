@@ -15,6 +15,7 @@ import {
   restaurantPrimaryAction,
   restaurantStatusHint,
 } from "../utils/orderStatus";
+import RestaurantNewOrdersAlert from "../components/restaurant/RestaurantNewOrdersAlert";
 
 const AVATAR_COLORS = [
   { bg: "#d1fae5", text: "#047857" },
@@ -126,7 +127,14 @@ function RestaurantDashboard() {
   }, []);
 
   const stats = useMemo(() => computeRestaurantDashboardStats(orders), [orders]);
-  const recentOrders = useMemo(() => orders.slice(0, 10), [orders]);
+  const newOrders = useMemo(
+    () => orders.filter((o) => o.status === "PLACED" || o.status === "NEW"),
+    [orders]
+  );
+  const recentOrders = useMemo(
+    () => orders.filter((o) => o.status !== "PLACED" && o.status !== "NEW").slice(0, 10),
+    [orders]
+  );
 
   const handleOrderStatus = async (orderId, nextStatus) => {
     setOrderActionId(orderId);
@@ -162,6 +170,19 @@ function RestaurantDashboard() {
       </div>
 
       {ordersError ? <div className="rd-alert-error">{ordersError}</div> : null}
+
+      {!ordersLoading ? (
+        <RestaurantNewOrdersAlert
+          orders={newOrders}
+          orderActionId={orderActionId}
+          onAccept={(id) => handleOrderStatus(id, "ACCEPTED")}
+          onCancel={(id) => handleOrderStatus(id, "CANCELLED")}
+          formatItems={formatItems}
+          customerLabel={customerLabel}
+          customerInitials={customerInitials}
+          avatarColor={avatarColor}
+        />
+      ) : null}
 
       <div className="rd-stats-grid">
         <div className="rd-stat-card">
@@ -214,7 +235,11 @@ function RestaurantDashboard() {
           {ordersLoading ? (
             <p className="rd-empty">Loading orders…</p>
           ) : recentOrders.length === 0 ? (
-            <p className="rd-empty">No orders yet.</p>
+            <p className="rd-empty">
+              {newOrders.length > 0
+                ? "No accepted orders yet. Accept a new order above to see it here."
+                : "No orders yet."}
+            </p>
           ) : (
             <div className="rd-table-wrap">
               <table className="rd-table">

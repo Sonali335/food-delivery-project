@@ -106,3 +106,113 @@
   top: 0;
   right: -0.15rem;
 }
+
+.rd-new-orders-alert {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%);
+  border: 1px solid #fecaca;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.08);
+}
+
+.rd-new-orders-alert-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.rd-new-orders-alert-icon {
+  color: #dc2626;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.rd-new-orders-alert-title {
+  margin: 0;
+  font-family: "Epilogue", system-ui, sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #991b1b;
+}
+
+.rd-new-orders-alert-sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.8125rem;
+  color: #6c7a71;
+}
+
+.rd-new-orders-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rd-new-order-card {
+  background: #fff;
+  border: 1px solid #fee2e2;
+  border-radius: 0.625rem;
+  padding: 0.875rem 1rem;
+}
+
+.rd-new-order-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.rd-new-order-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rd-new-order-id {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #121c2a;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.rd-new-order-pill {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #991b1b;
+  background: #fee2e2;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+}
+
+.rd-new-order-meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: #6c7a71;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rd-new-order-amount {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #006c49;
+  white-space: nowrap;
+}
+
+.rd-new-order-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f5f5f5;
+}

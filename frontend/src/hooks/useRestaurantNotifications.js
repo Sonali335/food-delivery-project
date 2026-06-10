@@ -55,7 +55,10 @@ export function useRestaurantNotifications() {
   const clearBadge = useCallback(() => setUnseenCount(0), []);
 
   useEffect(() => {
-    if (location.pathname === "/restaurant/orders") {
+    if (
+      location.pathname === "/restaurant/orders" ||
+      location.pathname === "/restaurant/dashboard"
+    ) {
       clearBadge();
     }
   }, [location.pathname, clearBadge]);
@@ -73,8 +76,11 @@ export function useRestaurantNotifications() {
 
       notifiedOrderIds.current.add(orderId);
       setUnseenCount((count) => count + 1);
-      setToast({ orderId, key: Date.now() });
       playNewOrderSound(playedSoundOrderIds.current, orderId);
+
+      if (location.pathname !== "/restaurant/dashboard") {
+        setToast({ orderId, key: Date.now() });
+      }
     };
 
     socket.on("order:update", onOrderUpdate);
@@ -82,7 +88,7 @@ export function useRestaurantNotifications() {
     return () => {
       socket.off("order:update", onOrderUpdate);
     };
-  }, []);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!toast) return undefined;
