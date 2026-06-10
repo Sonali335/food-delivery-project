@@ -8,6 +8,7 @@ function RestaurantShell({
   statusLoading = false,
   statusSaving = false,
   onSetStatus,
+  ordersBadgeCount = 0,
   children,
 }) {
   const navigate = useNavigate();
@@ -75,7 +76,14 @@ function RestaurantShell({
             </NavLink>
             <NavLink to="/restaurant/orders" className={linkClass}>
               <span className="material-symbols-outlined">list_alt</span>
-              Order history
+              <span className="rd-nav-link-badge-wrap">
+                Order history
+                {ordersBadgeCount > 0 ? (
+                  <span className="rd-nav-badge" aria-label={`${ordersBadgeCount} new orders`}>
+                    {ordersBadgeCount > 9 ? "9+" : ordersBadgeCount}
+                  </span>
+                ) : null}
+              </span>
             </NavLink>
             <NavLink to="/restaurant/categories" className={linkClass}>
               <span className="material-symbols-outlined">category</span>

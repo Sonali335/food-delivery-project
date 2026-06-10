@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import { getStatus, updateStatus } from "../../api/restaurant";
 import { getProfile } from "../../api/profile";
+import { useRestaurantNotifications } from "../../hooks/useRestaurantNotifications";
 import RestaurantShell from "./RestaurantShell";
+import RestaurantToast from "./RestaurantToast";
 import { RestaurantProfileContext } from "./RestaurantProfileContext";
 
 const CACHE_KEY = "food_delivery_restaurant_shell";
@@ -28,6 +30,7 @@ function writeShellCache(data) {
 }
 
 function RestaurantLayout() {
+  const { unseenCount, toast, dismissToast } = useRestaurantNotifications();
   const cached = readShellCache();
   const [restaurantName, setRestaurantName] = useState(cached?.restaurantName ?? "");
   const [status, setStatus] = useState(cached?.status ?? "open");
@@ -104,10 +107,14 @@ function RestaurantLayout() {
         statusLoading={statusLoading}
         statusSaving={statusSaving}
         onSetStatus={applyStatus}
+        ordersBadgeCount={unseenCount}
       >
         {shellError ? <div className="rd-alert-error">{shellError}</div> : null}
         <Outlet />
       </RestaurantShell>
+      {toast ? (
+        <RestaurantToast orderId={toast.orderId} onClose={dismissToast} />
+      ) : null}
     </RestaurantProfileContext.Provider>
   );
 }
