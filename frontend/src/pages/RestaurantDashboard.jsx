@@ -11,45 +11,19 @@ import {
   mergeOrderRecord,
 } from "../utils/restaurantDashboardStats";
 import {
-  canRestaurantCancel,
-  orderStatusBadgeClass,
-  orderStatusLabel,
-  restaurantPrimaryAction,
-  restaurantStatusHint,
-} from "../utils/orderStatus";
+  avatarColor as orderAvatarColor,
+  customerInitials as orderCustomerInitials,
+  customerLabel as orderCustomerLabel,
+  itemCount,
+  orderShortId,
+} from "../utils/restaurantOrderDisplay";
 import RestaurantNewOrdersAlert from "../components/restaurant/RestaurantNewOrdersAlert";
-
-const AVATAR_COLORS = [
-  { bg: "#d1fae5", text: "#047857" },
-  { bg: "#dbeafe", text: "#1d4ed8" },
-  { bg: "#f3e8ff", text: "#7c3aed" },
-  { bg: "#ffedd5", text: "#c2410c" },
-];
+import RestaurantOrderDetailModal from "../components/restaurant/RestaurantOrderDetailModal";
+import RestaurantOrderStatusSelect from "../components/restaurant/RestaurantOrderStatusSelect";
 
 function formatItems(items) {
   if (!Array.isArray(items) || items.length === 0) return "—";
   return items.map((line) => `${line.quantity}x ${line.name}`).join(", ");
-}
-
-function customerLabel(customerId) {
-  const id = String(customerId || "");
-  return `Customer ${id.slice(-4).toUpperCase()}`;
-}
-
-function customerInitials(customerId) {
-  const id = String(customerId || "??");
-  return id.slice(-2).toUpperCase();
-}
-
-function avatarColor(customerId) {
-  const id = String(customerId || "");
-  let hash = 0;
-  for (let i = 0; i < id.length; i += 1) hash = (hash + id.charCodeAt(i)) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[hash];
-}
-
-function statusBadgeClass(status) {
-  return orderStatusBadgeClass(status, "rd-badge");
 }
 
 function RestaurantDashboard() {
@@ -59,6 +33,8 @@ function RestaurantDashboard() {
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState("");
   const [orderActionId, setOrderActionId] = useState(null);
+  const [detailOrderId, setDetailOrderId] = useState(null);
+  const [modalError, setModalError] = useState("");
 
   const refreshOrders = useCallback(async () => {
     const { orders: list } = await getRestaurantOrders();
@@ -140,20 +116,36 @@ function RestaurantDashboard() {
     [orders]
   );
 
+  const detailOrder = useMemo(
+    () => orders.find((o) => String(o._id) === String(detailOrderId)) || null,
+    [orders, detailOrderId]
+  );
+
+  const openDetail = (orderId) => {
+    setModalError("");
+    setDetailOrderId(String(orderId));
+  };
+
   const handleOrderStatus = async (orderId, nextStatus) => {
     setOrderActionId(orderId);
+    setModalError("");
     setOrdersError("");
     try {
-      const order = orders.find((o) => String(o._id) === String(orderId));
+      const existingOrder = orders.find((o) => String(o._id) === String(orderId));
       const result =
         nextStatus === "ACCEPTED"
-          ? await acceptRestaurantOrder(orderId, order?.items)
+          ? await acceptRestaurantOrder(orderId, existingOrder?.items)
           : await updateOrderStatus(orderId, nextStatus);
-      const { order } = result;
-      setOrders((prev) => mergeOrderRecord(prev, order));
+      const { order: updatedOrder } = result;
+      setOrders((prev) => mergeOrderRecord(prev, updatedOrder));
       await refreshOrders();
+      if (nextStatus === "CANCELLED" || nextStatus === "DELIVERED") {
+        setDetailOrderId(null);
+      }
     } catch (e) {
-      setOrdersError(e.message || "Order update failed");
+      const msg = e.message || "Order update failed";
+      setModalError(msg);
+      setOrdersError(msg);
     } finally {
       setOrderActionId(null);
     }
@@ -187,9 +179,9 @@ function RestaurantDashboard() {
           onAccept={(id) => handleOrderStatus(id, "ACCEPTED")}
           onCancel={(id) => handleOrderStatus(id, "CANCELLED")}
           formatItems={formatItems}
-          customerLabel={customerLabel}
-          customerInitials={customerInitials}
-          avatarColor={avatarColor}
+          customerLabel={orderCustomerLabel}
+          customerInitials={orderCustomerInitials}
+          avatarColor={orderAvatarColor}
         />
       ) : null}
 
@@ -240,6 +232,14 @@ function RestaurantDashboard() {
         <div className="rd-panel">
           <div className="rd-panel-header">
             <h3 className="rd-panel-title">Recent orders</h3>
+            <button
+              type="button"
+              className="rd-btn-outline rd-panel-header-link"
+              onClick={() => navigate("/restaurant/orders")}
+            >
+              View all
+              <span className="material-symbols-outlined">chevron_right</span>
+            </button>
           </div>
           {ordersLoading ? (
             <p className="rd-empty">Loading orders…</p>
@@ -250,84 +250,77 @@ function RestaurantDashboard() {
                 : "No orders yet."}
             </p>
           ) : (
-            <div className="rd-table-wrap">
-              <table className="rd-table">
-                <thead>
-                  <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Items</th>
-                    <th>Status</th>
-                    <th>Amount</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentOrders.map((order) => {
-                    const avatar = avatarColor(order.customerId);
-                    const primaryAction = restaurantPrimaryAction(order);
-                    const statusHint = restaurantStatusHint(order.status);
-                    return (
-                      <tr key={order._id}>
-                        <td className="rd-order-id">#{String(order._id).slice(-6)}</td>
-                        <td>
-                          <div className="rd-customer-cell">
-                            <span
-                              className="rd-avatar"
-                              style={{ background: avatar.bg, color: avatar.text }}
+            <div className="rd-oh-table-panel rd-dashboard-recent-table">
+              <div className="rd-oh-table-scroll">
+                <table className="rd-oh-table">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Customer</th>
+                      <th>Items</th>
+                      <th>Total</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentOrders.map((order) => {
+                      const avatar = orderAvatarColor(order.customerId);
+                      const count = itemCount(order.items);
+                      const isSelected = String(detailOrderId) === String(order._id);
+                      return (
+                        <tr
+                          key={order._id}
+                          className={
+                            isSelected
+                              ? "rd-oh-row-clickable rd-oh-row-selected"
+                              : "rd-oh-row-clickable"
+                          }
+                          onClick={() => openDetail(order._id)}
+                        >
+                          <td className="rd-oh-order-id">
+                            <button
+                              type="button"
+                              className="rd-oh-order-link"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDetail(order._id);
+                              }}
                             >
-                              {customerInitials(order.customerId)}
-                            </span>
-                            <span>{customerLabel(order.customerId)}</span>
-                          </div>
-                        </td>
-                        <td className="rd-items-text">{formatItems(order.items)}</td>
-                        <td>
-                          <span className={statusBadgeClass(order.status)}>
-                            {orderStatusLabel(order.status)}
-                          </span>
-                          <OrderEtaText eta={order.eta} />
-                        </td>
-                        <td className="rd-amount">${Number(order.totalAmount).toFixed(2)}</td>
-                        <td>
-                          <div className="rd-order-actions">
-                            {primaryAction ? (
-                              <button
-                                type="button"
-                                className="rd-action-btn rd-action-btn-primary"
-                                disabled={orderActionId === order._id}
-                                onClick={() =>
-                                  handleOrderStatus(order._id, primaryAction.nextStatus)
-                                }
+                              {orderShortId(order._id)}
+                            </button>
+                          </td>
+                          <td>
+                            <div className="rd-customer-cell">
+                              <span
+                                className="rd-avatar"
+                                style={{ background: avatar.bg, color: avatar.text }}
                               >
-                                {primaryAction.label}
-                              </button>
-                            ) : null}
-                            {canRestaurantCancel(order) ? (
-                              <button
-                                type="button"
-                                className="rd-action-btn"
-                                disabled={orderActionId === order._id}
-                                onClick={() => handleOrderStatus(order._id, "CANCELLED")}
-                              >
-                                Cancel
-                              </button>
-                            ) : null}
-                            {!primaryAction && !canRestaurantCancel(order) && statusHint ? (
-                              <span className={`rd-order-status-hint${order.status === "DELIVERED" ? " rd-order-status-hint-done" : ""}`}>
-                                {statusHint}
+                                {orderCustomerInitials(order.customerId)}
                               </span>
-                            ) : null}
-                            {!primaryAction && !canRestaurantCancel(order) && !statusHint ? (
-                              <span className="rd-items-text">—</span>
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                              <span>{orderCustomerLabel(order.customerId)}</span>
+                            </div>
+                          </td>
+                          <td>
+                            {count} {count === 1 ? "Item" : "Items"}
+                          </td>
+                          <td className="rd-amount">
+                            ${Number(order.totalAmount).toFixed(2)}
+                          </td>
+                          <td onClick={(e) => e.stopPropagation()}>
+                            <RestaurantOrderStatusSelect
+                              orderId={order._id}
+                              status={order.status}
+                              disabled={orderActionId === order._id}
+                              onStatusChange={handleOrderStatus}
+                            />
+                            <OrderEtaText eta={order.eta} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -364,6 +357,20 @@ function RestaurantDashboard() {
           </div>
         </div>
       </div>
+
+      {detailOrder ? (
+        <RestaurantOrderDetailModal
+          order={detailOrder}
+          onClose={() => {
+            setDetailOrderId(null);
+            setModalError("");
+          }}
+          onReject={(id) => handleOrderStatus(id, "CANCELLED")}
+          onPrimaryAction={(id, status) => handleOrderStatus(id, status)}
+          actionLoading={orderActionId === detailOrder._id}
+          actionError={modalError}
+        />
+      ) : null}
     </>
   );
 }

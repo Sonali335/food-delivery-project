@@ -147,13 +147,13 @@ function RestaurantOrderHistory() {
     setModalError("");
     setOrdersError("");
     try {
-      const order = orders.find((o) => String(o._id) === String(orderId));
+      const existingOrder = orders.find((o) => String(o._id) === String(orderId));
       const result =
         nextStatus === "ACCEPTED"
-          ? await acceptRestaurantOrder(orderId, order?.items)
+          ? await acceptRestaurantOrder(orderId, existingOrder?.items)
           : await updateOrderStatus(orderId, nextStatus);
-      const { order } = result;
-      setOrders((prev) => mergeOrderRecord(prev, order));
+      const { order: updatedOrder } = result;
+      setOrders((prev) => mergeOrderRecord(prev, updatedOrder));
       const { orders: list } = await getRestaurantOrders();
       setOrders(list || []);
       if (nextStatus === "CANCELLED" || nextStatus === "DELIVERED") {

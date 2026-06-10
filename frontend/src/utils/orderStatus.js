@@ -57,3 +57,25 @@ export function canRestaurantCancel(order) {
 export function isActiveOrderStatus(status) {
   return RESTAURANT_ACTIVE_STATUSES.includes(status);
 }
+
+/** Statuses a restaurant can move an order to from the current status. */
+const RESTAURANT_ORDER_TRANSITIONS = {
+  PLACED: ["ACCEPTED", "CANCELLED"],
+  ACCEPTED: ["PREPARING", "CANCELLED"],
+  PREPARING: ["PICKED_UP", "CANCELLED"],
+  PICKED_UP: ["DELIVERED"],
+};
+
+export function restaurantOrderStatusOptions(currentStatus) {
+  const current = currentStatus || "";
+  const nextStatuses = RESTAURANT_ORDER_TRANSITIONS[current] || [];
+  const values = [current, ...nextStatuses.filter((s) => s !== current)];
+  return values.map((value) => ({
+    value,
+    label: orderStatusLabel(value),
+  }));
+}
+
+export function canRestaurantChangeOrderStatus(status) {
+  return Boolean(RESTAURANT_ORDER_TRANSITIONS[status]?.length);
+}

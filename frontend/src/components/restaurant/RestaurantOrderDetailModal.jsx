@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import OrderEtaText from "../OrderEtaText";
 import OrderPrepTimeText from "../OrderPrepTimeText";
 import {
@@ -48,7 +49,7 @@ function RestaurantOrderDetailModal({
     order.status
   );
 
-  return (
+  return createPortal(
     <div className="rd-odm-overlay" role="presentation" onClick={onClose}>
       <div
         className="rd-odm-panel"
@@ -214,7 +215,8 @@ function RestaurantOrderDetailModal({
           </footer>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
