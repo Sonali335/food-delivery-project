@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const { Server } = require("socket.io");
 const User = require("../src/models/User");
 const Order = require("../src/models/Order");
+const DriverProfile = require("../src/models/DriverProfile");
 
 const DRIVER_LOCATION_RESTAURANT_STATUSES = ["ACCEPTED", "PREPARING", "PICKED_UP"];
 
@@ -51,7 +52,15 @@ const initSocket = (httpServer) => {
       socket.join(`restaurant:${userId}`);
     } else if (role === "driver") {
       socket.join(`driver:${userId}`);
-      socket.join("drivers:pool");
+
+      DriverProfile.findOne({ userId: socket.user._id })
+        .lean()
+        .then((profile) => {
+          if (profile?.availabilityStatus === "online") {
+            socket.join("drivers:pool");
+          }
+        })
+        .catch(() => {});
 
       socket.on("driver:location:update", async (payload) => {
         const lat = Number(payload?.lat);
@@ -100,6 +109,31 @@ const broadcastDriverLocation = async (driverId, lat, lng, driverProfile = null)
   });
 };
 
+const setDriverPoolMembership = async (driverId, isOnline) => {
+  if (!io || driverId == null) return;
+
+  const sockets = await io.in(`driver:${String(driverId)}`).fetchSockets();
+  sockets.forEach((socket) => {
+    if (isOnline) {
+      socket.join("drivers:pool");
+    } else {
+      socket.leave("drivers:pool");
+    }
+  });
+};
+
+const emitDriverAvailability = async (driverId, availabilityStatus) => {
+  if (!io || driverId == null) return;
+
+  const driverIdStr = String(driverId);
+  io.to(`driver:${driverIdStr}`).emit("driver:availability", {
+    driverId: driverIdStr,
+    availabilityStatus,
+  });
+
+  await setDriverPoolMembership(driverId, availabilityStatus === "online");
+};
+
 const emitOrderUpdate = (order) => {
   if (!io || !order) return;
 
@@ -125,5 +159,6 @@ module.exports = {
   initSocket,
   emitOrderUpdate,
   broadcastDriverLocation,
+  emitDriverAvailability,
   getIo: () => io,
 };

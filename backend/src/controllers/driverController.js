@@ -1,5 +1,5 @@
 const DriverProfile = require("../models/DriverProfile");
-const { broadcastDriverLocation } = require("../../socket");
+const { broadcastDriverLocation, emitDriverAvailability } = require("../../socket");
 
 const updateLocation = async (req, res) => {
   try {
@@ -29,6 +29,35 @@ const updateLocation = async (req, res) => {
   }
 };
 
+const updateAvailability = async (req, res) => {
+  try {
+    const { availabilityStatus } = req.body;
+
+    if (!["online", "offline"].includes(availabilityStatus)) {
+      return res.status(400).json({
+        message: 'availabilityStatus must be "online" or "offline"',
+      });
+    }
+
+    const profile = await DriverProfile.findOneAndUpdate(
+      { userId: req.user._id },
+      { availabilityStatus },
+      { new: true, runValidators: true }
+    ).lean();
+
+    if (!profile) {
+      return res.status(404).json({ message: "Driver profile not found" });
+    }
+
+    await emitDriverAvailability(req.user._id, availabilityStatus);
+
+    return res.status(200).json({ profile });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   updateLocation,
+  updateAvailability,
 };

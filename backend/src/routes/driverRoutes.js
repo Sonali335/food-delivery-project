@@ -12,4 +12,11 @@ router.patch(
   driverController.updateLocation
 );
 
+router.patch(
+  "/availability",
+  authMiddleware,
+  roleMiddleware(["driver"]),
+  driverController.updateAvailability
+);
+
 module.exports = router;

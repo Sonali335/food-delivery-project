@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Order = require("../models/Order");
+const DriverProfile = require("../models/DriverProfile");
 const { ORDER_STATUSES } = require("../models/Order");
 const MenuItem = require("../models/MenuItem");
 const RestaurantProfile = require("../models/RestaurantProfile");
@@ -159,11 +160,14 @@ const getOrdersForRestaurant = async (restaurantId) => {
 };
 
 const getOrdersForDriver = async (driverId) => {
-  return Order.find({
-    $or: [{ driverId }, { status: "PREPARING", driverId: null }],
-  })
-    .sort({ createdAt: -1 })
-    .lean();
+  const profile = await DriverProfile.findOne({ userId: driverId }).lean();
+  const isOnline = profile?.availabilityStatus === "online";
+
+  const query = isOnline
+    ? { $or: [{ driverId }, { status: "PREPARING", driverId: null }] }
+    : { driverId };
+
+  return Order.find(query).sort({ createdAt: -1 }).lean();
 };
 
 const updateOrderStatus = async (actor, orderId, newStatus) => {
