@@ -755,6 +755,107 @@
   font-size: 0.625rem;
 }
 
+.rd-order-driver-row td {
+  padding: 0 1.5rem 1rem;
+  border-top: none;
+  background: rgba(236, 253, 245, 0.2);
+}
+
+.rd-driver-info-box {
+  border: 1px solid #e8f5ef;
+  border-radius: 0.75rem;
+  background: #f8fffc;
+  padding: 0.875rem 1rem;
+}
+
+.rd-driver-info-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.rd-driver-info-icon {
+  font-size: 1.125rem;
+  color: #006c49;
+}
+
+.rd-driver-info-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #121c2a;
+  flex: 1;
+}
+
+.rd-driver-info-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rd-driver-info-badge-en_route {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.rd-driver-info-badge-arriving_soon {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.rd-driver-info-badge-arrived {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.rd-driver-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.625rem 1rem;
+  margin: 0;
+}
+
+.rd-driver-info-grid dt {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6c7a71;
+  margin: 0;
+}
+
+.rd-driver-info-grid dd {
+  margin: 0.125rem 0 0;
+  font-size: 0.8125rem;
+  color: #121c2a;
+}
+
+.rd-driver-info-arrived {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #047857;
+}
+
+.rd-driver-info-arrived .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+@media (min-width: 640px) {
+  .rd-driver-info-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .rd-order-actions {
   display: flex;
   flex-wrap: wrap;

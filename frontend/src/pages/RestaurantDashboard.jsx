@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useEffect } from "react";
+import { Fragment, useCallback, useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getRestaurantOrders, updateOrderStatus } from "../api/orders";
 import { acceptRestaurantOrder } from "../utils/acceptRestaurantOrder";
@@ -20,6 +20,9 @@ import {
 import RestaurantNewOrdersAlert from "../components/restaurant/RestaurantNewOrdersAlert";
 import RestaurantOrderDetailModal from "../components/restaurant/RestaurantOrderDetailModal";
 import RestaurantOrderStatusSelect from "../components/restaurant/RestaurantOrderStatusSelect";
+import DriverInfoBox from "../components/restaurant/DriverInfoBox";
+import { useRestaurantDriverLocations } from "../hooks/useRestaurantDriverLocations";
+import { buildDriverInfoBoxProps } from "../utils/driverPickupDisplay";
 
 function formatItems(items) {
   if (!Array.isArray(items) || items.length === 0) return "—";
@@ -151,6 +154,8 @@ function RestaurantDashboard() {
     }
   };
 
+  const { getDriverLocation, restaurantCoords } = useRestaurantDriverLocations();
+
   const welcomeName = restaurantName || "your restaurant";
 
   return (
@@ -267,9 +272,14 @@ function RestaurantDashboard() {
                       const avatar = orderAvatarColor(order.customerId);
                       const count = itemCount(order.items);
                       const isSelected = String(detailOrderId) === String(order._id);
+                      const driverInfoProps = buildDriverInfoBoxProps(
+                        order,
+                        getDriverLocation,
+                        restaurantCoords
+                      );
                       return (
+                        <Fragment key={order._id}>
                         <tr
-                          key={order._id}
                           className={
                             isSelected
                               ? "rd-oh-row-clickable rd-oh-row-selected"
@@ -316,6 +326,18 @@ function RestaurantDashboard() {
                             <OrderEtaText eta={order.eta} />
                           </td>
                         </tr>
+                        {driverInfoProps ? (
+                          <tr
+                            key={`${order._id}-driver`}
+                            className="rd-order-driver-row"
+                            onClick={() => openDetail(order._id)}
+                          >
+                            <td colSpan={6}>
+                              <DriverInfoBox {...driverInfoProps} />
+                            </td>
+                          </tr>
+                        ) : null}
+                        </Fragment>
                       );
                     })}
                   </tbody>

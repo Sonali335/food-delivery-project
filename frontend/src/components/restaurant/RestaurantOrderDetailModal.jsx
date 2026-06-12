@@ -2,6 +2,9 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import OrderEtaText from "../OrderEtaText";
 import OrderPrepTimeText from "../OrderPrepTimeText";
+import DriverInfoBox from "./DriverInfoBox";
+import { useRestaurantDriverLocations } from "../../hooks/useRestaurantDriverLocations";
+import { buildDriverInfoBoxProps } from "../../utils/driverPickupDisplay";
 import {
   avatarColor,
   canRejectOrder,
@@ -37,8 +40,15 @@ function RestaurantOrderDetailModal({
     };
   }, [onClose]);
 
+  const { getDriverLocation, restaurantCoords } = useRestaurantDriverLocations();
+
   if (!order) return null;
 
+  const driverInfoProps = buildDriverInfoBoxProps(
+    order,
+    getDriverLocation,
+    restaurantCoords
+  );
   const avatar = avatarColor(order.customerId);
   const count = itemCount(order.items);
   const subtotal = Number(order.totalAmount || 0);
@@ -129,6 +139,12 @@ function RestaurantOrderDetailModal({
               </div>
             </div>
           </section>
+
+          {driverInfoProps ? (
+            <section className="rd-odm-section">
+              <DriverInfoBox {...driverInfoProps} />
+            </section>
+          ) : null}
 
           <section className="rd-odm-section">
             <h3 className="rd-odm-section-title">
