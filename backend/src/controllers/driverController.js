@@ -1,4 +1,5 @@
 const DriverProfile = require("../models/DriverProfile");
+const { broadcastDriverLocation } = require("../../socket");
 
 const updateLocation = async (req, res) => {
   try {
@@ -19,6 +20,8 @@ const updateLocation = async (req, res) => {
     if (!profile) {
       return res.status(404).json({ message: "Driver profile not found" });
     }
+
+    await broadcastDriverLocation(req.user._id, latNum, lngNum, profile);
 
     return res.status(200).json({ profile });
   } catch (error) {

@@ -6,6 +6,7 @@ import { orderStatusLabel } from "../utils/orderStatus";
 import OrderEtaText from "../components/OrderEtaText";
 import DriverLayout from "../components/driver/DriverLayout";
 import { useDriverProfile } from "../components/driver/DriverProfileContext";
+import useDriverAutoLocation from "../hooks/useDriverAutoLocation";
 
 const ACTIVE_STATUSES = ["PREPARING", "PICKED_UP"];
 
@@ -71,6 +72,7 @@ function computeStats(orders, ratingAverage) {
 }
 
 function DriverDashboardContent() {
+  useDriverAutoLocation();
   const { driverName, isOnline, ratingAverage } = useDriverProfile();
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");

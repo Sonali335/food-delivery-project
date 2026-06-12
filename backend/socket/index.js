@@ -1,6 +1,9 @@
 const jwt = require("jsonwebtoken");
 const { Server } = require("socket.io");
 const User = require("../src/models/User");
+const Order = require("../src/models/Order");
+
+const DRIVER_LOCATION_RESTAURANT_STATUSES = ["ACCEPTED", "PREPARING", "PICKED_UP"];
 
 let io = null;
 
@@ -49,10 +52,52 @@ const initSocket = (httpServer) => {
     } else if (role === "driver") {
       socket.join(`driver:${userId}`);
       socket.join("drivers:pool");
+
+      socket.on("driver:location:update", async (payload) => {
+        const lat = Number(payload?.lat);
+        const lng = Number(payload?.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        await broadcastDriverLocation(socket.user._id, lat, lng);
+      });
     }
   });
 
   return io;
+};
+
+const broadcastDriverLocation = async (driverId, lat, lng, driverProfile = null) => {
+  if (!io || driverId == null) return;
+
+  const orders = await Order.find({
+    driverId,
+    status: { $in: DRIVER_LOCATION_RESTAURANT_STATUSES },
+  }).lean();
+
+  if (!orders.length) return;
+
+  const driver =
+    driverProfile != null
+      ? {
+          username: driverProfile.username,
+          phone: driverProfile.phone,
+          vehicleType: driverProfile.vehicleType,
+          vehicleNumber: driverProfile.vehicleNumber,
+        }
+      : undefined;
+
+  const updatedAt = new Date();
+  const driverIdStr = String(driverId);
+
+  orders.forEach((order) => {
+    io.to(`restaurant:${order.restaurantId}`).emit("driver:location", {
+      driverId: driverIdStr,
+      orderId: String(order._id),
+      lat,
+      lng,
+      updatedAt,
+      ...(driver ? { driver } : {}),
+    });
+  });
 };
 
 const emitOrderUpdate = (order) => {
@@ -79,5 +124,6 @@ const emitOrderUpdate = (order) => {
 module.exports = {
   initSocket,
   emitOrderUpdate,
+  broadcastDriverLocation,
   getIo: () => io,
 };
