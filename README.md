@@ -239,7 +239,7 @@ Full request/response reference:
 | Document | Description |
 | -------- | ----------- |
 | [`backend/doc/API.md`](backend/doc/API.md) | Auth, profile, health, env notes |
-| [`backend/doc/restaurant.md`](backend/doc/restaurant.md) | Menu, categories, status, customer browse |
+| [`backend/doc/restaurant.md`](backend/doc/restaurant.md) | Menu, categories, status, settings (prep time), search, customer browse |
 | [`backend/doc/driver.md`](backend/doc/driver.md) | Driver location and availability |
 | [`backend/doc/orders.md`](backend/doc/orders.md) | Orders REST + Socket.io |
 

@@ -14,7 +14,7 @@
 | -------- | ----- |
 | [`API.md`](API.md) (this file) | Health, auth, profile |
 | [`restaurant.md`](restaurant.md) | Menu, categories, restaurant status, geocoding, uploads & customer browse (`/api/menu`, `/api/category`, `/api/restaurant`, `/uploads`) |
-| [`driver.md`](driver.md) | Driver location (`/api/driver`) |
+| [`driver.md`](driver.md) | Driver location, availability, live location broadcast (`/api/driver`) |
 | [`orders.md`](orders.md) | Order lifecycle (`/api/orders`) |
 
 **Route prefixes (overview)**
@@ -23,11 +23,11 @@
 | ------ | -------------- |
 | `/api/auth` | Signup, login, OTP, password reset |
 | `/api/customer` | Profile CRUD for all roles |
-| `/api/restaurant` | Restaurant status, geocoding (settings map), customer restaurant browse |
+| `/api/restaurant` | Restaurant status, settings (prep time), geocoding; customer restaurant browse |
 | `/uploads` | Static menu images when Cloudinary is not configured (no auth) |
-| `/api/menu`, `/api/category` | Restaurant menu management; customer menu browse |
-| `/api/driver` | Driver location |
-| `/api/orders` | Order lifecycle (create, list, status updates) |
+| `/api/menu`, `/api/category` | Restaurant menu management; customer menu browse and global search |
+| `/api/driver` | Driver GPS location and online/offline availability |
+| `/api/orders` | Order lifecycle (create, list, status updates, restaurant field patches) |
 
 **Default JSON rules**
 
@@ -721,6 +721,7 @@ Map coordinates are optional; the settings UI uses **`GET /api/restaurant/geocod
 | Method   | Path | Auth | Purpose |
 |----------|------|------|---------|
 | `GET` / `PATCH` | `/api/restaurant/status` | Bearer JWT, role `restaurant` | Read / update operational status |
+| `GET` / `PATCH` | `/api/restaurant/settings` | Bearer JWT, role `restaurant` | Read / update average prep time (`prepTime`) |
 | `GET` | `/api/restaurant/geocode` | Bearer JWT, role `restaurant` | Forward geocode address → `lat`, `lng`, `label` |
 | `GET` | `/api/restaurant/reverse-geocode` | Bearer JWT, role `restaurant` | Reverse geocode `lat`, `lng` → `label`, optional `address` parts |
 | `GET` | `/api/restaurant` | Bearer JWT, role `customer` | List restaurants (browse) |
@@ -729,6 +730,7 @@ Map coordinates are optional; the settings UI uses **`GET /api/restaurant/geocod
 | `DELETE` | `/api/category/:id` | Bearer JWT, role `restaurant` | Delete category |
 | `POST` / `GET` | `/api/menu/` | Bearer JWT, role `restaurant` | Create / list menu items |
 | `GET` | `/api/menu/restaurant/:restaurantId` | Bearer JWT, role `customer` | Browse available menu for a restaurant |
+| `GET` | `/api/menu/search?q=` | Bearer JWT, role `customer` | Global food search across restaurants |
 | `GET` / `PATCH` / `DELETE` | `/api/menu/:id` | Bearer JWT, role `restaurant` | Read / update / delete menu item |
 | `POST` | `/api/menu/upload-image` | Bearer JWT, role `restaurant` | Upload menu image (Cloudinary or local `/uploads`) |
 | `GET` | `/uploads/**` | none | Static menu image files (when not using Cloudinary) |
@@ -737,7 +739,8 @@ Map coordinates are optional; the settings UI uses **`GET /api/restaurant/geocod
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| `PATCH` | `/api/driver/location` | Bearer JWT, role `driver` | Update `DriverProfile.location` (`lat`, `lng`) |
+| `PATCH` | `/api/driver/location` | Bearer JWT, role `driver` | Update `DriverProfile.location` (`lat`, `lng`); broadcasts `driver:location` to restaurants |
+| `PATCH` | `/api/driver/availability` | Bearer JWT, role `driver` | Set `availabilityStatus` (`online` \| `offline`); emits `driver:availability` |
 
 ### Orders (`orders.md`)
 
@@ -746,9 +749,10 @@ Map coordinates are optional; the settings UI uses **`GET /api/restaurant/geocod
 | `POST` | `/api/orders` | Bearer JWT, role `customer` | Create order (`PLACED`) |
 | `GET` | `/api/orders/customer` | Bearer JWT, role `customer` | List customer orders |
 | `GET` | `/api/orders/restaurant` | Bearer JWT, role `restaurant` | List restaurant orders |
-| `GET` | `/api/orders/driver` | Bearer JWT, role `driver` | List driver-assigned orders |
+| `GET` | `/api/orders/driver` | Bearer JWT, role `driver` | List assigned orders; pool `PREPARING` orders only when driver is **online** |
 | `GET` | `/api/orders/:id` | Bearer JWT, related party | Get one order |
 | `PATCH` | `/api/orders/:id/status` | Bearer JWT, role per transition | Update order status |
+| `PATCH` | `/api/orders/:id` | Bearer JWT, role `restaurant` | Patch order fields (`eta`, `prepTimeMinutes`) |
 
 ---
 
@@ -793,7 +797,14 @@ If SMTP is **not** configured, OTP values are **not** emailed; the server logs a
 
 - Shares the same HTTP server and port as the REST API.
 - Clients authenticate with the same JWT via `handshake.auth.token`, query `?token=`, or `Authorization: Bearer`.
-- Order events: see [`orders.md`](orders.md#real-time-updates-socketio).
+
+| Event | Description |
+| ----- | ----------- |
+| `order:update` | Order created or status/fields changed — see [`orders.md`](orders.md#real-time-updates-socketio) |
+| `driver:location` | Driver GPS broadcast to restaurant rooms — see [`driver.md`](driver.md#real-time-driver-location) |
+| `driver:availability` | Driver online/offline sync — see [`driver.md`](driver.md#update-availability) |
+
+Implementation: `backend/socket/index.js`, `frontend/src/socket.js`.
 
 ---
 

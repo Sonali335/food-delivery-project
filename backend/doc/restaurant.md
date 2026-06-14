@@ -10,9 +10,9 @@ Every route below requires **`Authorization: Bearer <JWT>`**.
 
 | Route group | Required role |
 | ----------- | ------------- |
-| Status, geocoding, categories, menu CRUD, image upload | `restaurant` |
+| Status, settings, geocoding, categories, menu CRUD, image upload | `restaurant` |
 | `GET /api/restaurant`, `GET /api/restaurant/:id` | `customer` |
-| `GET /api/menu/restaurant/:restaurantId` | `customer` |
+| `GET /api/menu/restaurant/:restaurantId`, `GET /api/menu/search` | `customer` |
 
 Requests without a valid token receive **401**. Authenticated users with the wrong role receive **403**.
 
@@ -69,6 +69,60 @@ Allowed values: `"open"`, `"closed"`, `"busy"`.
 ```
 
 **Errors:** `400` if `status` is missing or invalid; `404` if profile not found.
+
+---
+
+## Restaurant settings (average prep time)
+
+Used by the restaurant settings UI for a **default / fallback** average preparation time (minutes). Per-item prep times are on **`MenuItem.prepTime`** (see [Menu items](#menu-items)).
+
+Requires JWT with role **`restaurant`**.
+
+### `GET /api/restaurant/settings`
+
+**Response (200):**
+
+```json
+{
+  "settings": {
+    "prepTime": 20
+  }
+}
+```
+
+`prepTime` is normalized to one of **10, 15, 20, 25, 30, 35, 40** (default **20** if unset).
+
+**Errors:** `404` if no restaurant profile exists.
+
+---
+
+### `PATCH /api/restaurant/settings`
+
+**Body (JSON):**
+
+| Field | Type | Required | Notes |
+| ----- | ---- | -------- | ----- |
+| `prepTime` | number | yes | One of 10, 15, 20, 25, 30, 35, 40 |
+
+**Example**
+
+```json
+{ "prepTime": 25 }
+```
+
+**Response (200):**
+
+```json
+{
+  "settings": {
+    "prepTime": 25
+  }
+}
+```
+
+**Errors:** `400` if `prepTime` is missing or not in the allowed list; `404` if profile not found.
+
+**Note:** Map coordinates (`locationLat`, `locationLng`) and address are updated via **`POST /api/customer/complete`** (restaurant profile), not this settings endpoint.
 
 ---
 
@@ -290,10 +344,53 @@ Returns **available** menu items for the given restaurant (`isAvailable: true`),
 | `itemId` | Menu item `_id` (use as `menuItemId` when creating an order) |
 | `image` | `imageUrl` or `null` |
 | `category` | Populated category **name**, or `null` |
+| `prepTime` | Preparation time in minutes (10–40; default 20) |
 
 **Errors:** `400` invalid `restaurantId`.
 
 This shape is optimized for the customer UI; restaurant owners use the full `MenuItem` document from `GET /api/menu/` below.
+
+---
+
+### `GET /api/menu/search` (customer)
+
+Global food search across all restaurants. Requires role **`customer`**.
+
+**Query parameters**
+
+| Param | Type | Required | Notes |
+| ----- | ---- | -------- | ----- |
+| `q` | string | yes | Search term (matches item name or description, case-insensitive) |
+
+**Example:** `GET /api/menu/search?q=pizza`
+
+**Response (200):**
+
+```json
+{
+  "items": [
+    {
+      "itemId": "...",
+      "name": "Margherita Pizza",
+      "description": "Tomato, mozzarella",
+      "price": 12.99,
+      "image": "https://...",
+      "category": "Mains",
+      "prepTime": 20,
+      "restaurant": {
+        "id": "...",
+        "name": "Pizza Place",
+        "location": "123 Food Court",
+        "cuisine": "Italian",
+        "rating": 4.5,
+        "status": "open"
+      }
+    }
+  ]
+}
+```
+
+Returns up to **60** matches. Items without a valid `RestaurantProfile` are omitted. Empty or missing `q` returns `{ "items": [] }`.
 
 ---
 
@@ -311,6 +408,7 @@ Creates a menu item.
 | `description`  | string  | no       | Defaults to `""`                           |
 | `imageUrl`     | string  | no       | Optional; empty becomes `null`             |
 | `isAvailable`  | boolean | no       | Defaults to `true`                         |
+| `prepTime`     | number  | no       | Minutes: 10, 15, 20, 25, 30, 35, or 40 (default **20**) |
 
 **Response (201):**
 
@@ -362,6 +460,7 @@ Partial update. Include only fields to change.
 | `categoryId`    | string  | Must still be a category owned by this restaurant   |
 | `imageUrl`      | string  | `null` or empty clears to `null`                     |
 | `isAvailable`   | boolean |                                                      |
+| `prepTime`      | number  | 10, 15, 20, 25, 30, 35, or 40                      |
 
 **Response (200):**
 
@@ -433,8 +532,8 @@ Store the returned `url` on the menu item as **`imageUrl`** when creating or upd
 
 | Module | Role | Endpoints |
 | ------ | ---- | --------- |
-| `frontend/src/api/restaurant.js` | restaurant / customer | `getStatus`, `updateStatus`, `geocodeRestaurantLocation`, `reverseGeocodeRestaurantLocation`, `getAllRestaurants`, `getRestaurant` |
-| `frontend/src/api/menu.js` | restaurant / customer | `getMenuItems`, `getMenuByRestaurant`, CRUD, `uploadMenuImage` |
+| `frontend/src/api/restaurant.js` | restaurant / customer | `getStatus`, `updateStatus`, `getRestaurantSettings`, `patchRestaurantSettings`, geocode, `getAllRestaurants`, `getRestaurant` |
+| `frontend/src/api/menu.js` | restaurant / customer | `getMenuItems`, `getMenuByRestaurant`, menu search, CRUD, `uploadMenuImage` |
 | `frontend/src/api/category.js` | restaurant | category CRUD |
 | `frontend/src/api/profile.js` | all roles | `getProfile`, `completeRestaurantProfile`, etc. (mounted at `/api/customer`) |
 
@@ -454,6 +553,6 @@ Status codes: **400** validation, **401** unauthorized, **403** forbidden role, 
 
 ## Related data models (summary)
 
-- **`MenuItem`:** `restaurantId` (ref `User`), `name`, `description`, `price`, `categoryId` (ref `Category`), optional `imageUrl`, `isAvailable`, timestamps.
+- **`MenuItem`:** `restaurantId` (ref `User`), `name`, `description`, `price`, `categoryId` (ref `Category`), optional `imageUrl`, `isAvailable`, **`prepTime`** (minutes, default 20), timestamps.
 - **`Category`:** `restaurantId` (ref `User`), `name`, timestamps.
-- **`RestaurantProfile`:** `userId`, `restaurantName`, `phone`, `location` (display address string), optional `locationLat` / `locationLng` (map pin), optional `cuisineType`, optional `openingHours` (JSON string, e.g. weekly schedule from settings), `status` (`open` | `closed` | `busy`), `ratingAverage`, `ratingCount`, timestamps. Profile upsert via **`POST /api/customer/complete`** — see [`API.md`](API.md#restaurant-body).
+- **`RestaurantProfile`:** `userId`, `restaurantName`, `phone`, `location` (display address string), optional `locationLat` / `locationLng` (map pin), optional `cuisineType`, optional `openingHours` (JSON string, e.g. weekly schedule from settings), `status` (`open` \| `closed` \| `busy`), **`prepTime`** (average prep minutes, default 20), `ratingAverage`, `ratingCount`, timestamps. Profile upsert via **`POST /api/customer/complete`** — see [`API.md`](API.md#restaurant-body). Average prep time also via **`PATCH /api/restaurant/settings`**.
