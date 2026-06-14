@@ -6,19 +6,25 @@ A full-stack web app that connects **customers**, **drivers**, and **restaurants
 
 | Role | Capabilities |
 | ---- | ------------ |
-| **Customer** | Browse restaurants and menus, place orders, track order status, view order history |
-| **Restaurant** | Set open/closed/busy status, manage categories and menu items (with optional Cloudinary images), accept and progress orders on the dashboard |
-| **Driver** | See available and assigned deliveries, update GPS location, pick up and complete orders |
+| **Customer** | Browse restaurants and menus, global food search, cart checkout, track order status with prep time and ETA, view order history |
+| **Restaurant** | Open / busy / closed status, settings (hours, map location, average prep time), categories and menu items with per-item prep time and optional Cloudinary images, new-order notifications, dashboard KPIs, accept and progress orders, order history with detail modal, live driver pickup info |
+| **Driver** | Online / offline availability (persistent), auto GPS updates every 10s, see available and assigned deliveries (pool only when online), manual location update, pick up and complete orders |
 
 **Shared:** JWT auth, profile setup per role, password change, account deletion, password reset via email OTP.
 
-**Real-time:** Order create and status changes broadcast `order:update` to customers, restaurants, and drivers (pool for unassigned `PREPARING` orders).
+**Real-time (Socket.io):**
+
+| Event | Who receives | Purpose |
+| ----- | ------------ | ------- |
+| `order:update` | Customer, restaurant, assigned driver; `drivers:pool` for unassigned `PREPARING` | Status changes; includes `eta`, `prepTimeMinutes` when set |
+| `driver:location` | Restaurant rooms for active orders | Live driver lat/lng, vehicle info for pickup tracking |
+| `driver:availability` | Driver room | Online / offline status sync |
 
 ## Tech stack
 
 | Layer | Technologies |
 | ----- | ------------ |
-| **Frontend** | React 19, Vite 8, React Router 7, Fetch API, Socket.io client |
+| **Frontend** | React 19, Vite 8, React Router 7, Fetch API, Socket.io client, Leaflet (restaurant map picker) |
 | **Backend** | Node.js, Express 5, Mongoose 9, Socket.io 4 |
 | **Database** | MongoDB (Atlas or local) |
 | **Auth** | JWT (7 days), bcrypt, 6-digit email OTP (10 min), optional Google Sign-In |
@@ -138,6 +144,16 @@ Status flow:
 
 Orders can be **`CANCELLED`** from allowed states (rules differ by role). See [`backend/doc/orders.md`](backend/doc/orders.md) for transition matrix and API details.
 
+**Prep time and ETA**
+
+- Each menu item has a **prep time** (10–40 min). On accept, order ETA uses the **maximum** prep time among line items (fallback: restaurant average prep time).
+- Orders store `prepTimeMinutes` and `eta` (shown on customer, restaurant, and driver UIs).
+
+**Driver pool**
+
+- Unassigned **`PREPARING`** orders appear in the driver pool only for drivers with **`availabilityStatus: "online"`**.
+- When a driver picks up (`PICKED_UP`), they are assigned as `driverId` on the order.
+
 ## Frontend routes
 
 ### Public (auth)
@@ -159,18 +175,24 @@ Orders can be **`CANCELLED`** from allowed states (rules differ by role). See [`
 | `/setup/restaurant` | restaurant | Profile setup |
 | `/dashboard` | any | Redirects to role home |
 | `/customer/dashboard` | customer | Customer home |
+| `/customer/search` | customer | Global food search across restaurants |
 | `/customer/restaurants` | customer | Browse restaurants |
-| `/customer/restaurant/:id` | customer | Menu and checkout |
+| `/customer/restaurant/:id` | customer | Menu, cart, and checkout |
 | `/customer/orders` | customer | Order list |
-| `/customer/orders/:id` | customer | Order details |
-| `/driver/dashboard` | driver | Active deliveries, location, status updates |
-| `/driver/history` | driver | Past orders |
-| `/driver/earnings` | driver | Earnings (placeholders) |
-| `/restaurant/dashboard` | restaurant | Incoming orders, status actions |
+| `/customer/orders/:id` | customer | Order details (prep time, ETA) |
+| `/driver/dashboard` | driver | Active deliveries, auto GPS, location panel |
+| `/driver/history` | driver | Past orders (placeholder UI) |
+| `/driver/earnings` | driver | Earnings (placeholder UI) |
+| `/setup/driver` | driver | Profile / settings |
+| `/restaurant/dashboard` | restaurant | KPIs, new-order alerts, recent orders |
+| `/restaurant/orders` | restaurant | Order history + detail modal |
+| `/restaurant/settings` | restaurant | Hours, map, status, average prep time |
 | `/restaurant/menu` | restaurant | Menu list |
 | `/restaurant/menu/create` | restaurant | Add menu item |
 | `/restaurant/menu/edit/:id` | restaurant | Edit menu item |
 | `/restaurant/categories` | restaurant | Categories |
+
+Restaurant routes use a nested layout under `/restaurant/*` (sidebar + top bar).
 
 ## API overview
 
@@ -182,14 +204,35 @@ Orders can be **`CANCELLED`** from allowed states (rules differ by role). See [`
 | `/api/health` | JSON health + MongoDB connection state |
 | `/api/auth` | Signup, verify OTP, login, Google, forgot/reset password |
 | `/api/customer` | Profile CRUD, password change, account delete |
-| `/api/restaurant` | Restaurant status; customer browse (`GET /`, `GET /:id`) |
-| `/api/menu`, `/api/category` | Restaurant menu CRUD; customer menu (`GET /menu/restaurant/:restaurantId`) |
-| `/api/driver` | Driver GPS location |
-| `/api/orders` | Create, list, get, update order status |
+| `/api/restaurant` | Status, settings, geocode; customer browse (`GET /`, `GET /:id`) |
+| `/api/menu`, `/api/category` | Restaurant menu CRUD; customer menu (`GET /menu/restaurant/:id`); global search (`GET /menu/search`) |
+| `/api/driver` | Driver GPS (`PATCH /location`), availability (`PATCH /availability`) |
+| `/api/orders` | Create, list, get, update status; restaurant can patch order fields (`eta`, `prepTimeMinutes`) |
 
 Protected routes use `Authorization: Bearer <JWT>`.
 
-**Socket.io** (same host/port): event `order:update` with `{ orderId, status, updatedAt }`. Connect with JWT via query `?token=`, `auth.token`, or `Authorization` header. Implementation: `backend/socket/index.js`, `frontend/src/socket.js`.
+### Driver availability
+
+```http
+PATCH /api/driver/availability
+{ "availabilityStatus": "online" | "offline" }
+```
+
+- Persists on `DriverProfile.availabilityStatus` (default `offline`).
+- Emits `driver:availability` to the driver socket room.
+- Offline drivers do not receive unassigned pool orders via `GET /api/orders/driver` or `drivers:pool` socket room.
+
+### Socket.io
+
+Connect with JWT via query `?token=`, `auth.token`, or `Authorization` header. Implementation: `backend/socket/index.js`, `frontend/src/socket.js`.
+
+**Rooms (on connect):**
+
+| Role | Rooms |
+| ---- | ----- |
+| `customer` | `customer:<userId>` |
+| `restaurant` | `restaurant:<userId>` |
+| `driver` | `driver:<userId>`; `drivers:pool` only when online |
 
 Full request/response reference:
 
@@ -197,7 +240,7 @@ Full request/response reference:
 | -------- | ----------- |
 | [`backend/doc/API.md`](backend/doc/API.md) | Auth, profile, health, env notes |
 | [`backend/doc/restaurant.md`](backend/doc/restaurant.md) | Menu, categories, status, customer browse |
-| [`backend/doc/driver.md`](backend/doc/driver.md) | Driver location |
+| [`backend/doc/driver.md`](backend/doc/driver.md) | Driver location and availability |
 | [`backend/doc/orders.md`](backend/doc/orders.md) | Orders REST + Socket.io |
 
 ## Project structure
@@ -208,7 +251,7 @@ food-delivery-project/
 ├── backend/
 │   ├── .env.example
 │   ├── doc/                  # API documentation (Markdown)
-│   ├── socket/               # Socket.io server + order:update emitter
+│   ├── socket/               # Socket.io server, order + driver events
 │   └── src/
 │       ├── server.js         # Express app, routes, HTTP server
 │       ├── routes/           # auth, customer, menu, category, restaurant, driver, orders
@@ -222,9 +265,11 @@ food-delivery-project/
     ├── vite.config.js        # API proxy, env merge, Google client ID
     └── src/
         ├── api/              # auth, profile, menu, restaurant, orders, driver, category
-        ├── socket.js         # Socket.io client
-        ├── components/       # auth, OTP, layouts, ProtectedRoute
-        └── pages/            # auth, setup, role dashboards
+        ├── hooks/              # restaurant notifications, driver auto-location, driver locations
+        ├── socket.js           # Socket.io client
+        ├── components/         # auth, customer, driver, restaurant portals
+        ├── utils/              # order status, prep time, ETA, distance helpers
+        └── pages/              # auth, setup, role dashboards
 ```
 
 ## Scripts
@@ -260,6 +305,13 @@ If `mongodb+srv` SRV lookup fails, the backend uses public DNS by default. Set `
 ### Order updates not appearing live
 
 Ensure the backend is running (Socket.io shares its port). In dev, the frontend must use the Vite proxy so `/socket.io` reaches port 5000. After login, dashboards call `connectSocket()` with the stored JWT.
+
+### Driver location not showing on restaurant dashboard
+
+1. Driver must be **online** and assigned to the order (or order in `PREPARING` / `PICKED_UP`).
+2. Driver dashboard must be open (auto GPS runs from `useDriverAutoLocation`).
+3. Browser must allow **location permission** for the driver.
+4. Restaurant **settings** should include map coordinates (`locationLat`, `locationLng`) for distance / “Arrived” detection.
 
 ### Only one terminal for dev
 
